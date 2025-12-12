@@ -1,8 +1,0 @@
-import { useState, useEffect } from 'react';
-import { Plugin } from '../../core/plugins/types';
-import { Calculator as CalcIcon, X, Minus, Delete } from 'lucide-react';
-import { motion } from 'framer-motion';
-// ... rest of the file logic will be preserved by subsequent edits or is assumed correct, 
-// BUT write_to_file OVERWRITES. I should use replace_file_content or ensure I write the whole file. 
-// Ah, I made a mistake using write_to_file to "Fix imports" if I don't provide the whole content.
-// I'll Cancel this tool call and use replace_file_content for imports.
