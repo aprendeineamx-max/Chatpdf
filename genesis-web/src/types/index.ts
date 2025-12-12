@@ -1,3 +1,4 @@
+
 export interface AtomicContext {
     id: string;
     folder_name: string;
@@ -19,6 +20,15 @@ export interface AtomicArtifact {
 export interface ArtifactEmbedding {
     id: string;
     artifact_id: string;
-    embedding: number[];
-    metadata: any;
+    embedding?: number[];
+    metadata?: Record<string, any>;
+}
+
+export interface GenesisOptimization {
+    id: string;
+    target_artifact: string;
+    issue_detected: string;
+    proposed_fix: string;
+    status: 'PENDING' | 'APPLIED' | 'REJECTED';
+    created_at: string;
 }

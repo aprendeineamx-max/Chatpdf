@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { AtomicContext, AtomicArtifact } from './types';
-import { Folder, FileText, Cpu, Activity, Clock, Database } from 'lucide-react';
+import { Folder, FileText, Cpu, Activity, Clock, Database, ShieldCheck } from 'lucide-react';
 import { SkillGalaxy } from './components/SkillGalaxy';
+import { SelfHealingGalaxy } from './components/SelfHealingGalaxy';
 
 function App() {
-    const [view, setView] = useState<'timeline' | 'skills'>('timeline');
+    const [view, setView] = useState<'timeline' | 'skills' | 'self-healing'>('timeline');
     const [contexts, setContexts] = useState<AtomicContext[]>([]);
     const [selectedContext, setSelectedContext] = useState<AtomicContext | null>(null);
     const [artifacts, setArtifacts] = useState<AtomicArtifact[]>([]);
@@ -77,6 +78,12 @@ function App() {
                         >
                             SKILLS
                         </button>
+                        <button
+                            onClick={() => setView('self-healing')}
+                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'self-healing' ? 'bg-emerald-900 text-emerald-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        >
+                            HEALING
+                        </button>
                     </div>
                 </div>
 
@@ -110,11 +117,13 @@ function App() {
             </div>
 
             {/* Main Content */}
-            {view === 'skills' ? (
-                <SkillGalaxy />
-            ) : (
-                <div className="flex-1 flex flex-col bg-[#0f0f13]">
-                    {selectedContext ? (
+            <div className="flex-1 flex flex-col bg-[#0f0f13]">
+                {view === 'skills' ? (
+                    <SkillGalaxy />
+                ) : view === 'self-healing' ? (
+                    <SelfHealingGalaxy />
+                ) : (
+                    selectedContext ? (
                         <div className="flex-1 flex flex-col h-full">
                             {/* Header */}
                             <div className="h-20 border-b border-gray-800 flex items-center justify-between px-8 bg-[#131316]">
@@ -148,7 +157,9 @@ function App() {
                                                         <span>Preview Unavailable (Local)</span>
                                                     </div>
                                                 ) : (
-                                                    <FileText className="w-10 h-10 text-gray-700 group-hover:text-gray-500 transition-colors" />
+                                                    <div className="flex items-center justify-center h-full">
+                                                        <FileText className="w-10 h-10 text-gray-700 group-hover:text-gray-500 transition-colors" />
+                                                    </div>
                                                 )}
                                             </div>
 
@@ -175,9 +186,9 @@ function App() {
                             <Activity className="w-16 h-16 text-gray-800 animate-pulse" />
                             <p>Select a Neural Atom to inspect its cognitive artifacts.</p>
                         </div>
-                    )}
-                </div>
-            )}
+                    )
+                )}
+            </div>
         </div>
     );
 }
