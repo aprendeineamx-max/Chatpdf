@@ -1,0 +1,1376 @@
+{
+  "files": {
+    "git_nexus_proposal.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.863566",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.863566",
+          "hash": "18aec15d671ed4818ccb445a265c8fef0b92ad4287d592b69919c261165e53e6",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "18aec15d671ed4818ccb445a265c8fef0b92ad4287d592b69919c261165e53e6",
+      "last_synced": "2025-12-12T02:58:00.863566",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\git_nexus_proposal.md"
+    },
+    "implementation_plan.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.865576",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.865576",
+          "hash": "430b5f12d3f8300d45e286fe47cd9290a3caa08044101f52fbac062950dd4381",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "430b5f12d3f8300d45e286fe47cd9290a3caa08044101f52fbac062950dd4381",
+      "last_synced": "2025-12-12T02:58:00.865576",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\implementation_plan.md"
+    },
+    "implementation_plan_mindsync.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.867588",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.867588",
+          "hash": "8024b055527066344c49cc3fbda671152cad663fc47f112095d7cf3f584e26e4",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "8024b055527066344c49cc3fbda671152cad663fc47f112095d7cf3f584e26e4",
+      "last_synced": "2025-12-12T02:58:00.867588",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\implementation_plan_mindsync.md"
+    },
+    "implementation_plan_persistence.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.869598",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.869598",
+          "hash": "37234bdc8766a32dc5ea37543efa8f305901f0e76545dc56d99dc2da4c85cc64",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "37234bdc8766a32dc5ea37543efa8f305901f0e76545dc56d99dc2da4c85cc64",
+      "last_synced": "2025-12-12T02:58:00.869598",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\implementation_plan_persistence.md"
+    },
+    "implementation_plan_plugins.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.871607",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.871607",
+          "hash": "5958e28309543ff56ac4f82fad20d2e6967dc24c8b64b6b704ff0f7fa349cb19",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "5958e28309543ff56ac4f82fad20d2e6967dc24c8b64b6b704ff0f7fa349cb19",
+      "last_synced": "2025-12-12T02:58:00.871607",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\implementation_plan_plugins.md"
+    },
+    "project_whitepaper_es.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.873615",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.873615",
+          "hash": "a914f9c8a2bae7cfabe73c1782d1e792a2b46fb0715efa72160cb70b39891204",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "a914f9c8a2bae7cfabe73c1782d1e792a2b46fb0715efa72160cb70b39891204",
+      "last_synced": "2025-12-12T02:58:00.873615",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\project_whitepaper_es.md"
+    },
+    "roadmap_growth.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.876209",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.876209",
+          "hash": "c7d6d8427b9df7a0d10959792aab9bae5829475b9dca5ce2b0a8d4c686ee4e2a",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "c7d6d8427b9df7a0d10959792aab9bae5829475b9dca5ce2b0a8d4c686ee4e2a",
+      "last_synced": "2025-12-12T02:58:00.876209",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\roadmap_growth.md"
+    },
+    "scaling_plan.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.878688",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.878688",
+          "hash": "19b706709c6a1211c3cb8695bcaa35ba136651cdd61bfe265289f79bc601fdf1",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "19b706709c6a1211c3cb8695bcaa35ba136651cdd61bfe265289f79bc601fdf1",
+      "last_synced": "2025-12-12T02:58:00.878688",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\scaling_plan.md"
+    },
+    "system_architecture.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.881159",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.881159",
+          "hash": "a440a1eddec75914decfab803678295244b411960d99151eec86ed803fcc6df4",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "a440a1eddec75914decfab803678295244b411960d99151eec86ed803fcc6df4",
+      "last_synced": "2025-12-12T02:58:00.881159",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\system_architecture.md"
+    },
+    "task.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.885182",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.885182",
+          "hash": "81fc6b27fc23dbee451cb6e6ad38bdcdd072ea37f85d42dd5e6461b302c4a148",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "81fc6b27fc23dbee451cb6e6ad38bdcdd072ea37f85d42dd5e6461b302c4a148",
+      "last_synced": "2025-12-12T02:58:00.885182",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\task.md"
+    },
+    "walkthrough.md": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.887959",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.887959",
+          "hash": "e1239e0d68162ea23314ed934a586a11f97d758f2a4e66727900c8dbe8d1f0ff",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "e1239e0d68162ea23314ed934a586a11f97d758f2a4e66727900c8dbe8d1f0ff",
+      "last_synced": "2025-12-12T02:58:00.887959",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\walkthrough.md"
+    },
+    "base_chat_restored_1765502017714.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.890498",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.890498",
+          "hash": "682cd8c4bdf81ce3c6099b4cf1c880092c7cb216c46f2fa07a08ead337aa65cb",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "682cd8c4bdf81ce3c6099b4cf1c880092c7cb216c46f2fa07a08ead337aa65cb",
+      "last_synced": "2025-12-12T02:58:00.890498",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\base_chat_restored_1765502017714.png"
+    },
+    "hello_retry_png_1765499733154.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.893129",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.893129",
+          "hash": "c9d9d842eb163cb492b65af4fa9cd0b0f73dd76cf38d385c4d740fc75e527769",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "c9d9d842eb163cb492b65af4fa9cd0b0f73dd76cf38d385c4d740fc75e527769",
+      "last_synced": "2025-12-12T02:58:00.893129",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\hello_retry_png_1765499733154.png"
+    },
+    "hello_world_1765499688748.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.896156",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.896156",
+          "hash": "4888ae4aa441f47479970ef7868f8bb9351f94b52c508e06e7090548ff6c66d3",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "4888ae4aa441f47479970ef7868f8bb9351f94b52c508e06e7090548ff6c66d3",
+      "last_synced": "2025-12-12T02:58:00.896156",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\hello_world_1765499688748.png"
+    },
+    "ipv4_verified_1765502922299.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.898672",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.898672",
+          "hash": "bd290befdfb19d9404a32cd2be9443172eb3fbc802a4ec928af32f3b605547d8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "bd290befdfb19d9404a32cd2be9443172eb3fbc802a4ec928af32f3b605547d8",
+      "last_synced": "2025-12-12T02:58:00.898672",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\ipv4_verified_1765502922299.png"
+    },
+    "provider_restore_verified_png_1765502107620.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.900206",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.900206",
+          "hash": "9739c04011a95922c10e92d50b53fdb37f22b48eb3e46f44b24d0b67306469b9",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "9739c04011a95922c10e92d50b53fdb37f22b48eb3e46f44b24d0b67306469b9",
+      "last_synced": "2025-12-12T02:58:00.900206",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\provider_restore_verified_png_1765502107620.png"
+    },
+    "swarm_success_1765493258081.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.904298",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.904298",
+          "hash": "398518c0efae0345513e04c74de36db5584178ea77d05904239b3fc279623eb3",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "398518c0efae0345513e04c74de36db5584178ea77d05904239b3fc279623eb3",
+      "last_synced": "2025-12-12T02:58:00.904298",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\swarm_success_1765493258081.png"
+    },
+    "swarm_ui_error_1765493123279.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:00.906310",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.906310",
+          "hash": "30c1c7be4d41edfcd31a3970117fdc81aba3923b1a1693bee52ca997ec4b6a65",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "30c1c7be4d41edfcd31a3970117fdc81aba3923b1a1693bee52ca997ec4b6a65",
+      "last_synced": "2025-12-12T02:58:00.906310",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\swarm_ui_error_1765493123279.png"
+    },
+    "uploaded_image_0_1765264789142.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.910071",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.910071",
+          "hash": "e23554f99660f09659333a7998072a60b712c5df647e0024934270875d51ca8e",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "e23554f99660f09659333a7998072a60b712c5df647e0024934270875d51ca8e",
+      "last_synced": "2025-12-12T02:58:00.910071",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765264789142.png"
+    },
+    "uploaded_image_0_1765267952728.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.912587",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.912587",
+          "hash": "c1059fd16193afdc433f277c026430e5c69c5da66fcc79b3768bcc31c33fd12e",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "c1059fd16193afdc433f277c026430e5c69c5da66fcc79b3768bcc31c33fd12e",
+      "last_synced": "2025-12-12T02:58:00.912587",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765267952728.png"
+    },
+    "uploaded_image_0_1765481367198.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.914614",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.914614",
+          "hash": "6416a0512d329603f82f2a71ab97e5ab53067c9693a639df1ddfefdecf1ba614",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "6416a0512d329603f82f2a71ab97e5ab53067c9693a639df1ddfefdecf1ba614",
+      "last_synced": "2025-12-12T02:58:00.914614",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765481367198.png"
+    },
+    "uploaded_image_0_1765481531087.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.918671",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.918671",
+          "hash": "eb151ff9cb23bcf605a99f13dfdc1a3b2ee38a9b732de12047858fbb04b37334",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "eb151ff9cb23bcf605a99f13dfdc1a3b2ee38a9b732de12047858fbb04b37334",
+      "last_synced": "2025-12-12T02:58:00.918671",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765481531087.png"
+    },
+    "uploaded_image_0_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.921123",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.921123",
+          "hash": "7bc82a25d323b6caa0a189f569d0462f5363214a14e4caac0dd5364582231dff",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "7bc82a25d323b6caa0a189f569d0462f5363214a14e4caac0dd5364582231dff",
+      "last_synced": "2025-12-12T02:58:00.921123",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765484424707.png"
+    },
+    "uploaded_image_0_1765487709050.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.923926",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.923926",
+          "hash": "407dfa038fb3dac9ad45f281df2c85257072703ac6c7335d9bde46a532669c16",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "407dfa038fb3dac9ad45f281df2c85257072703ac6c7335d9bde46a532669c16",
+      "last_synced": "2025-12-12T02:58:00.923926",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765487709050.png"
+    },
+    "uploaded_image_0_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.926464",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.926464",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:00.926464",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765502320459.png"
+    },
+    "uploaded_image_0_1765530127678.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.930191",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.930191",
+          "hash": "bd25c2a3e9ec60a6402b87b147846f942c66a61e5daed148f27cf432d6518d56",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "bd25c2a3e9ec60a6402b87b147846f942c66a61e5daed148f27cf432d6518d56",
+      "last_synced": "2025-12-12T02:58:00.930191",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765530127678.png"
+    },
+    "uploaded_image_0_1765531178739.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.934216",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.934216",
+          "hash": "a50fbe33595575c8e584db6b3c272f500ebc2ae14d7b7b7724bb7dce546672ed",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "a50fbe33595575c8e584db6b3c272f500ebc2ae14d7b7b7724bb7dce546672ed",
+      "last_synced": "2025-12-12T02:58:00.934216",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765531178739.png"
+    },
+    "uploaded_image_0_1765531280282.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.937021",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.937021",
+          "hash": "1843de1b1225324519f5dabf00b484737199529b8bd20d80d4352d64e31a8e53",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "1843de1b1225324519f5dabf00b484737199529b8bd20d80d4352d64e31a8e53",
+      "last_synced": "2025-12-12T02:58:00.937021",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765531280282.png"
+    },
+    "uploaded_image_0_1765531482782.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.940208",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.940208",
+          "hash": "6126e724eeddc1bb284cf0fd3b98c99ab22c0999d9be27b21148f58e21b1cdd8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "6126e724eeddc1bb284cf0fd3b98c99ab22c0999d9be27b21148f58e21b1cdd8",
+      "last_synced": "2025-12-12T02:58:00.940208",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_0_1765531482782.png"
+    },
+    "uploaded_image_1765264261458.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.943879",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.943879",
+          "hash": "446bea56daa0ff4947c26d3e3b09d352b9995943036dace83f100aa1fbd4ebdf",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "446bea56daa0ff4947c26d3e3b09d352b9995943036dace83f100aa1fbd4ebdf",
+      "last_synced": "2025-12-12T02:58:00.943879",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765264261458.png"
+    },
+    "uploaded_image_1765269595379.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.945892",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.945892",
+          "hash": "125737391c6c0887d30e4481b8330fb4d9e185c4c8d30af3d5e614b8d873cc48",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "125737391c6c0887d30e4481b8330fb4d9e185c4c8d30af3d5e614b8d873cc48",
+      "last_synced": "2025-12-12T02:58:00.945892",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765269595379.png"
+    },
+    "uploaded_image_1765269613962.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.950451",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.950451",
+          "hash": "125737391c6c0887d30e4481b8330fb4d9e185c4c8d30af3d5e614b8d873cc48",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "125737391c6c0887d30e4481b8330fb4d9e185c4c8d30af3d5e614b8d873cc48",
+      "last_synced": "2025-12-12T02:58:00.950451",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765269613962.png"
+    },
+    "uploaded_image_1765482449910.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.952976",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.952976",
+          "hash": "bd91393e003796735f320b32da143054b93107cbe238924326b3899958b8225b",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "bd91393e003796735f320b32da143054b93107cbe238924326b3899958b8225b",
+      "last_synced": "2025-12-12T02:58:00.952976",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765482449910.png"
+    },
+    "uploaded_image_1765482541170.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.956569",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.956569",
+          "hash": "0f11fcaa3640003ef455163ac3e1282800b9fa46e495e1aec912dee0417234d8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "0f11fcaa3640003ef455163ac3e1282800b9fa46e495e1aec912dee0417234d8",
+      "last_synced": "2025-12-12T02:58:00.956569",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765482541170.png"
+    },
+    "uploaded_image_1765483117263.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.960221",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.960221",
+          "hash": "259e1999900f18521888cd33979ab8976601ce7375e312cd21246888f9e3426c",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "259e1999900f18521888cd33979ab8976601ce7375e312cd21246888f9e3426c",
+      "last_synced": "2025-12-12T02:58:00.960221",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765483117263.png"
+    },
+    "uploaded_image_1765483382286.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.964572",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.964572",
+          "hash": "4153e2532fb37ec36cdd7debbbc1e75b06a2e2050e616bdee0af58e9d97bb378",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "4153e2532fb37ec36cdd7debbbc1e75b06a2e2050e616bdee0af58e9d97bb378",
+      "last_synced": "2025-12-12T02:58:00.964572",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765483382286.png"
+    },
+    "uploaded_image_1765483937401.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.968598",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.968598",
+          "hash": "1fc201dcc39dafed1cc076f3e40b37b9bc24669bce48d955122542ff82020716",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "1fc201dcc39dafed1cc076f3e40b37b9bc24669bce48d955122542ff82020716",
+      "last_synced": "2025-12-12T02:58:00.968598",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765483937401.png"
+    },
+    "uploaded_image_1765485850592.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.970631",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.970631",
+          "hash": "c981d45ab7ec8ff103cad9274b02cf6ecc15f01e1c7a07b16a431101cfe7a97a",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "c981d45ab7ec8ff103cad9274b02cf6ecc15f01e1c7a07b16a431101cfe7a97a",
+      "last_synced": "2025-12-12T02:58:00.970631",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765485850592.png"
+    },
+    "uploaded_image_1765486010707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.974157",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.974157",
+          "hash": "8236314993fdf11f7e661cc0f99bca33828473bec1541f273976f125823ecc30",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "8236314993fdf11f7e661cc0f99bca33828473bec1541f273976f125823ecc30",
+      "last_synced": "2025-12-12T02:58:00.974157",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765486010707.png"
+    },
+    "uploaded_image_1765486409974.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.978179",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.978179",
+          "hash": "d452fb98cf80efde180826fc81644c60e41da0d434b1182c3f470e045258c162",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "d452fb98cf80efde180826fc81644c60e41da0d434b1182c3f470e045258c162",
+      "last_synced": "2025-12-12T02:58:00.978179",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765486409974.png"
+    },
+    "uploaded_image_1765486764562.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.982211",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.982211",
+          "hash": "06915a1323e56977fcfb52acba7192d75e49fd05b4464196ef85b842d266208f",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "06915a1323e56977fcfb52acba7192d75e49fd05b4464196ef85b842d266208f",
+      "last_synced": "2025-12-12T02:58:00.982211",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765486764562.png"
+    },
+    "uploaded_image_1765498614446.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.984222",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.984222",
+          "hash": "96c4b258796d90f0401a953b60e2f97911d8963f1f13097b7906bc9af91a3783",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "96c4b258796d90f0401a953b60e2f97911d8963f1f13097b7906bc9af91a3783",
+      "last_synced": "2025-12-12T02:58:00.984222",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765498614446.png"
+    },
+    "uploaded_image_1765501853750.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.989483",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.989483",
+          "hash": "065a2b8799bbef980b2793ecb585e14fc958f2b8c78a9cd91dbb0c1b0724d353",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "065a2b8799bbef980b2793ecb585e14fc958f2b8c78a9cd91dbb0c1b0724d353",
+      "last_synced": "2025-12-12T02:58:00.989483",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765501853750.png"
+    },
+    "uploaded_image_1765503229099.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.992779",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.992779",
+          "hash": "b55d58dc59aa11fdc18b3bf4e667489e5f7c25f99cf631918647597f9b228ca3",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "b55d58dc59aa11fdc18b3bf4e667489e5f7c25f99cf631918647597f9b228ca3",
+      "last_synced": "2025-12-12T02:58:00.992779",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1765503229099.png"
+    },
+    "uploaded_image_1_1765264789142.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:00.996800",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:00.996800",
+          "hash": "f11db3f6c481cc48db9badf2912410580ee47a087e7301ee6df97d452d1bd6a2",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "f11db3f6c481cc48db9badf2912410580ee47a087e7301ee6df97d452d1bd6a2",
+      "last_synced": "2025-12-12T02:58:00.996800",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765264789142.png"
+    },
+    "uploaded_image_1_1765267952728.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.000852",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.000852",
+          "hash": "6e421e6273ffc274366808e71b250f4bcce51b956d56b039496630a09b1bbfea",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "6e421e6273ffc274366808e71b250f4bcce51b956d56b039496630a09b1bbfea",
+      "last_synced": "2025-12-12T02:58:01.000852",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765267952728.png"
+    },
+    "uploaded_image_1_1765481367198.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.004845",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.004845",
+          "hash": "a9ad4d7482b93a5a81a2be74a4dc95a1a92103608fd1f19488b6b500a85faf46",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "a9ad4d7482b93a5a81a2be74a4dc95a1a92103608fd1f19488b6b500a85faf46",
+      "last_synced": "2025-12-12T02:58:01.004845",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765481367198.png"
+    },
+    "uploaded_image_1_1765481531087.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.007883",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.007883",
+          "hash": "0904a689dd78ed7f1d1e5bf457c71d33a552de80807cf780e9b7a98a4b9fb536",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "0904a689dd78ed7f1d1e5bf457c71d33a552de80807cf780e9b7a98a4b9fb536",
+      "last_synced": "2025-12-12T02:58:01.007883",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765481531087.png"
+    },
+    "uploaded_image_1_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.012625",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.012625",
+          "hash": "1652b5c9a8787f5c99acc9bd179e9ffcee3def25011345c3d34efab575da1d72",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "1652b5c9a8787f5c99acc9bd179e9ffcee3def25011345c3d34efab575da1d72",
+      "last_synced": "2025-12-12T02:58:01.012625",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765484424707.png"
+    },
+    "uploaded_image_1_1765487709050.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.016435",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.016435",
+          "hash": "834333c6998541660ef778de2df2acf8bd231628da6da83e19aaeb4ddab02454",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "834333c6998541660ef778de2df2acf8bd231628da6da83e19aaeb4ddab02454",
+      "last_synced": "2025-12-12T02:58:01.016435",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765487709050.png"
+    },
+    "uploaded_image_1_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.020462",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.020462",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.020462",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765502320459.png"
+    },
+    "uploaded_image_1_1765530127678.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.025205",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.025205",
+          "hash": "3c63d8c1754e8065560f8cd1fd1be93c023ab55c80820d5d08bf3b40ee925c76",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "3c63d8c1754e8065560f8cd1fd1be93c023ab55c80820d5d08bf3b40ee925c76",
+      "last_synced": "2025-12-12T02:58:01.025205",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765530127678.png"
+    },
+    "uploaded_image_1_1765531178739.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.028006",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.028006",
+          "hash": "1843de1b1225324519f5dabf00b484737199529b8bd20d80d4352d64e31a8e53",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "1843de1b1225324519f5dabf00b484737199529b8bd20d80d4352d64e31a8e53",
+      "last_synced": "2025-12-12T02:58:01.028006",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765531178739.png"
+    },
+    "uploaded_image_1_1765531280282.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.033261",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.033261",
+          "hash": "555672e987c509bea83c96f71115ee9b9a6c0770f4c8422c9ef3612413eed4ef",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "555672e987c509bea83c96f71115ee9b9a6c0770f4c8422c9ef3612413eed4ef",
+      "last_synced": "2025-12-12T02:58:01.033261",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765531280282.png"
+    },
+    "uploaded_image_1_1765531482782.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.037067",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.037067",
+          "hash": "bacd140f6686d224443a23072a81e756398e0dabbb8cacda5efe77dfc4fc6cb6",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "bacd140f6686d224443a23072a81e756398e0dabbb8cacda5efe77dfc4fc6cb6",
+      "last_synced": "2025-12-12T02:58:01.037067",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_1_1765531482782.png"
+    },
+    "uploaded_image_2_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.041599",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.041599",
+          "hash": "ceb526d759e6b580cb6311a9c63ddc9b93b6bb36f5315a03ae707010f89e90d8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ceb526d759e6b580cb6311a9c63ddc9b93b6bb36f5315a03ae707010f89e90d8",
+      "last_synced": "2025-12-12T02:58:01.041599",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_2_1765484424707.png"
+    },
+    "uploaded_image_2_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.045299",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.045299",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.045299",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_2_1765502320459.png"
+    },
+    "uploaded_image_2_1765531178739.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.048327",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.048327",
+          "hash": "555672e987c509bea83c96f71115ee9b9a6c0770f4c8422c9ef3612413eed4ef",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "555672e987c509bea83c96f71115ee9b9a6c0770f4c8422c9ef3612413eed4ef",
+      "last_synced": "2025-12-12T02:58:01.048327",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_2_1765531178739.png"
+    },
+    "uploaded_image_2_1765531280282.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.053165",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.053165",
+          "hash": "a50fbe33595575c8e584db6b3c272f500ebc2ae14d7b7b7724bb7dce546672ed",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "a50fbe33595575c8e584db6b3c272f500ebc2ae14d7b7b7724bb7dce546672ed",
+      "last_synced": "2025-12-12T02:58:01.053165",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_2_1765531280282.png"
+    },
+    "uploaded_image_2_1765531482782.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.057183",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.057183",
+          "hash": "fd0e7066a9f27d76131b104f1e65ebdf4c6138877fbfa9ed7f381d17fa1edd9e",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "fd0e7066a9f27d76131b104f1e65ebdf4c6138877fbfa9ed7f381d17fa1edd9e",
+      "last_synced": "2025-12-12T02:58:01.057183",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_2_1765531482782.png"
+    },
+    "uploaded_image_3_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.062069",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.062069",
+          "hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+      "last_synced": "2025-12-12T02:58:01.062069",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_3_1765484424707.png"
+    },
+    "uploaded_image_3_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.066496",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.066496",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.066496",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_3_1765502320459.png"
+    },
+    "uploaded_image_3_1765531178739.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.070482",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.070482",
+          "hash": "2e7ea0d196225f8839632daabdc91efb728fe3e9ff0b852e222037fed58571b8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "2e7ea0d196225f8839632daabdc91efb728fe3e9ff0b852e222037fed58571b8",
+      "last_synced": "2025-12-12T02:58:01.070482",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_3_1765531178739.png"
+    },
+    "uploaded_image_3_1765531280282.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.075285",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.075285",
+          "hash": "2e7ea0d196225f8839632daabdc91efb728fe3e9ff0b852e222037fed58571b8",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "2e7ea0d196225f8839632daabdc91efb728fe3e9ff0b852e222037fed58571b8",
+      "last_synced": "2025-12-12T02:58:01.075285",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_3_1765531280282.png"
+    },
+    "uploaded_image_4_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.079219",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.079219",
+          "hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+      "last_synced": "2025-12-12T02:58:01.079219",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_4_1765484424707.png"
+    },
+    "uploaded_image_4_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.083768",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.083768",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.083768",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_4_1765502320459.png"
+    },
+    "uploaded_image_4_1765531280282.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.088326",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.088326",
+          "hash": "478d7ae4bb0a771e3a13f46a8fa806e53a5d618e1e6589eae1c06e1f86b75a57",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "478d7ae4bb0a771e3a13f46a8fa806e53a5d618e1e6589eae1c06e1f86b75a57",
+      "last_synced": "2025-12-12T02:58:01.088326",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_4_1765531280282.png"
+    },
+    "uploaded_image_5_1765484424707.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.092820",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.092820",
+          "hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "10903edd44594e3e0e0c01453aa25a539f7b28950c6ba30168b6641fa71dcc81",
+      "last_synced": "2025-12-12T02:58:01.092820",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_5_1765484424707.png"
+    },
+    "uploaded_image_5_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.098372",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.098372",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.098372",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_5_1765502320459.png"
+    },
+    "uploaded_image_6_1765502320459.png": {
+      "source": "USER_SENT",
+      "created_at": "2025-12-12T02:58:01.102431",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.102431",
+          "hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "ebb71455668a94a5ac05bb8c1f082610f031401e7b58d1fc8e043a25b753cffe",
+      "last_synced": "2025-12-12T02:58:01.102431",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\sent\\uploaded_image_6_1765502320459.png"
+    },
+    "verify_load_error_1765498369622.png": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.106458",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.106458",
+          "hash": "82dc128032b93832779a97382099d3c5bb060389f77d2ef0214b6f4195e31135",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "82dc128032b93832779a97382099d3c5bb060389f77d2ef0214b6f4195e31135",
+      "last_synced": "2025-12-12T02:58:01.106458",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_load_error_1765498369622.png"
+    },
+    "final_verification_full_1765504720402.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.114249",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.114249",
+          "hash": "12ffa9ff73d9b7c4cbcc3d2c82ef6e733d897a756dd7f461135f116b3f562ec6",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "12ffa9ff73d9b7c4cbcc3d2c82ef6e733d897a756dd7f461135f116b3f562ec6",
+      "last_synced": "2025-12-12T02:58:01.114249",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\final_verification_full_1765504720402.webp"
+    },
+    "final_verification_v2_1765504850499.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.119548",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.119548",
+          "hash": "f1b5ca2ac9daa972c5cd7e2adb839720857249805e329cdb59c06e7c3f1a8621",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "f1b5ca2ac9daa972c5cd7e2adb839720857249805e329cdb59c06e7c3f1a8621",
+      "last_synced": "2025-12-12T02:58:01.119548",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\final_verification_v2_1765504850499.webp"
+    },
+    "hydra_swarm_ui_verify_1765492875417.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.124847",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.124847",
+          "hash": "e0ba2200bcdb389b055d3a136efcaf557e1f0750d932b0e2a591724be0ef85a2",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "e0ba2200bcdb389b055d3a136efcaf557e1f0750d932b0e2a591724be0ef85a2",
+      "last_synced": "2025-12-12T02:58:01.124847",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\hydra_swarm_ui_verify_1765492875417.webp"
+    },
+    "verify_absolute_minimum_1765503744780.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.129837",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.129837",
+          "hash": "210906323e235424deb9b8937b5b626f03aea050c10d29e6b198b98fc5958dd3",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "210906323e235424deb9b8937b5b626f03aea050c10d29e6b198b98fc5958dd3",
+      "last_synced": "2025-12-12T02:58:01.129837",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_absolute_minimum_1765503744780.webp"
+    },
+    "verify_baseline_1765499610536.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.134375",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.134375",
+          "hash": "26c49582682133d29cce5a4fe4fa9aeed9447c36b2a1bc008fb5324555e2979a",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "26c49582682133d29cce5a4fe4fa9aeed9447c36b2a1bc008fb5324555e2979a",
+      "last_synced": "2025-12-12T02:58:01.134375",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_baseline_1765499610536.webp"
+    },
+    "verify_baseline_1765503824913.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.139371",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.139371",
+          "hash": "5c7255bea775e777c7d8eb246b2d5838a8bd81b63cfa8389cb36d910d5b43e05",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "5c7255bea775e777c7d8eb246b2d5838a8bd81b63cfa8389cb36d910d5b43e05",
+      "last_synced": "2025-12-12T02:58:01.139371",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_baseline_1765503824913.webp"
+    },
+    "verify_base_clean_1765503433760.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.144971",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.144971",
+          "hash": "94c14e451ce535283719397fa723a93d6a2a0622bbf8d0095524ff84ff5087be",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "94c14e451ce535283719397fa723a93d6a2a0622bbf8d0095524ff84ff5087be",
+      "last_synced": "2025-12-12T02:58:01.144971",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_base_clean_1765503433760.webp"
+    },
+    "verify_base_ui_1765499539767.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.149484",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.149484",
+          "hash": "9f68a6eeadef8b2b41ecfd1476a93307b4f87a414adebee58df395f69f383443",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "9f68a6eeadef8b2b41ecfd1476a93307b4f87a414adebee58df395f69f383443",
+      "last_synced": "2025-12-12T02:58:01.149484",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_base_ui_1765499539767.webp"
+    },
+    "verify_chat_interface_loading_1765503348949.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.155044",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.155044",
+          "hash": "9799efe3535821c2e2e0093efd7ad0fda0e5d2de995215d3ec11642276f1fbab",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "9799efe3535821c2e2e0093efd7ad0fda0e5d2de995215d3ec11642276f1fbab",
+      "last_synced": "2025-12-12T02:58:01.155044",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_chat_interface_loading_1765503348949.webp"
+    },
+    "verify_debug_overlay_retry_1765502378141.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.161901",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.161901",
+          "hash": "20413bfb7244159b6471167e73d7c8934c7f07e79ee901273b8fd9fda96086de",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "20413bfb7244159b6471167e73d7c8934c7f07e79ee901273b8fd9fda96086de",
+      "last_synced": "2025-12-12T02:58:01.161901",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_debug_overlay_retry_1765502378141.webp"
+    },
+    "verify_final_for_push_1765500278460.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.167216",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.167216",
+          "hash": "aa91afb0463bc922230f0aa1751bde9d2420ef7805b3c17f4bec2f0e6fadc6cf",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "aa91afb0463bc922230f0aa1751bde9d2420ef7805b3c17f4bec2f0e6fadc6cf",
+      "last_synced": "2025-12-12T02:58:01.167216",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_final_for_push_1765500278460.webp"
+    },
+    "verify_fix_final_1765499456108.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.172313",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.172313",
+          "hash": "83bdc39faf57578ce2aaec567eeeeaf6d875d5f5305737c38136263c3dd0dc05",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "83bdc39faf57578ce2aaec567eeeeaf6d875d5f5305737c38136263c3dd0dc05",
+      "last_synced": "2025-12-12T02:58:01.172313",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_fix_final_1765499456108.webp"
+    },
+    "verify_framer_check_1765504169754.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.177928",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.177928",
+          "hash": "d0e8b0ac20df2c3ae3cbbedd0ef5ee28e4f71289af381f78761a8102d227c7e6",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "d0e8b0ac20df2c3ae3cbbedd0ef5ee28e4f71289af381f78761a8102d227c7e6",
+      "last_synced": "2025-12-12T02:58:01.177928",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_framer_check_1765504169754.webp"
+    },
+    "verify_hello_world_deep_1765501951582.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.183465",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.183465",
+          "hash": "0eee4ea84b10369d0fcbe56cafc1005983ed86eed8b3b670c46f780d0d3bb102",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "0eee4ea84b10369d0fcbe56cafc1005983ed86eed8b3b670c46f780d0d3bb102",
+      "last_synced": "2025-12-12T02:58:01.183465",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_hello_world_deep_1765501951582.webp"
+    },
+    "verify_imports_chat_1765503627611.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.187989",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.187989",
+          "hash": "e7421c04e5f77e02255a219c5f97a19c9a7905df4c0dcc10ee87693ed4d3390b",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "e7421c04e5f77e02255a219c5f97a19c9a7905df4c0dcc10ee87693ed4d3390b",
+      "last_synced": "2025-12-12T02:58:01.187989",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_imports_chat_1765503627611.webp"
+    },
+    "verify_imports_disabled_1765503689871.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.194924",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.194924",
+          "hash": "d9da46f198778c8736678ca90bd84538912f103198837145e2956a934cb52a99",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "d9da46f198778c8736678ca90bd84538912f103198837145e2956a934cb52a99",
+      "last_synced": "2025-12-12T02:58:01.194924",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_imports_disabled_1765503689871.webp"
+    },
+    "verify_lucide_check_1765504093740.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.199464",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.199464",
+          "hash": "f1b5ca2ac9daa972c5cd7e2adb839720857249805e329cdb59c06e7c3f1a8621",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "f1b5ca2ac9daa972c5cd7e2adb839720857249805e329cdb59c06e7c3f1a8621",
+      "last_synced": "2025-12-12T02:58:01.199464",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_lucide_check_1765504093740.webp"
+    },
+    "verify_lucide_reinstall_1765504489602.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.204991",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.204991",
+          "hash": "f386fb65bdb9ea5817d247e9ec857a1c17405c938b944ff6dbb355a031178674",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "f386fb65bdb9ea5817d247e9ec857a1c17405c938b944ff6dbb355a031178674",
+      "last_synced": "2025-12-12T02:58:01.204991",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_lucide_reinstall_1765504489602.webp"
+    },
+    "verify_markdown_check_1765504247252.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.210520",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.210520",
+          "hash": "e1c175c454d7ed202b4a9c3bfbbde7eb94018bac6649d8858f25b636392cd05f",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "e1c175c454d7ed202b4a9c3bfbbde7eb94018bac6649d8858f25b636392cd05f",
+      "last_synced": "2025-12-12T02:58:01.210520",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_markdown_check_1765504247252.webp"
+    },
+    "verify_minimal_chat_1765503529875.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.215561",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.215561",
+          "hash": "4e446f32c7e70b9a3004948fb9be3e00069aaab1ce0cb70d32d74a48469199f2",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "4e446f32c7e70b9a3004948fb9be3e00069aaab1ce0cb70d32d74a48469199f2",
+      "last_synced": "2025-12-12T02:58:01.215561",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_minimal_chat_1765503529875.webp"
+    },
+    "verify_no_icons_1765504424930.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.221703",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.221703",
+          "hash": "76cdcda1b020846190bc04b20b64ae1b2c42c9d7792e21f6b00b1218d755ab8b",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "76cdcda1b020846190bc04b20b64ae1b2c42c9d7792e21f6b00b1218d755ab8b",
+      "last_synced": "2025-12-12T02:58:01.221703",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_no_icons_1765504424930.webp"
+    },
+    "verify_plugins_retry_1765498433149.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.229292",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.229292",
+          "hash": "c53451ed4fef05741e9d52094cce2da611f126094dad85fa9882f0bd414d4229",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "c53451ed4fef05741e9d52094cce2da611f126094dad85fa9882f0bd414d4229",
+      "last_synced": "2025-12-12T02:58:01.229292",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_plugins_retry_1765498433149.webp"
+    },
+    "verify_simple_component_1765503914926.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.235918",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.235918",
+          "hash": "50cc35f19c869b6e0ba89d91d356d7e4e0c6ab469fd12a3eed676e80f0b6a874",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "50cc35f19c869b6e0ba89d91d356d7e4e0c6ab469fd12a3eed676e80f0b6a874",
+      "last_synced": "2025-12-12T02:58:01.235918",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_simple_component_1765503914926.webp"
+    },
+    "verify_v2_clean_1765503995452.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.241876",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.241876",
+          "hash": "6237f6b635a96b3255c03b7948be97cdd3d190bc050c74aa638ee70df0c79175",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "6237f6b635a96b3255c03b7948be97cdd3d190bc050c74aa638ee70df0c79175",
+      "last_synced": "2025-12-12T02:58:01.241876",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_v2_clean_1765503995452.webp"
+    },
+    "verify_v2_clean_retry_1765504026164.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.248480",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.248480",
+          "hash": "57dc1cbd1285bb90e6e2c54223dad44b24b6e68932e7d6bf9576e6d4cd28f17a",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "57dc1cbd1285bb90e6e2c54223dad44b24b6e68932e7d6bf9576e6d4cd28f17a",
+      "last_synced": "2025-12-12T02:58:01.248480",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_v2_clean_retry_1765504026164.webp"
+    },
+    "verify_white_screen_fix_1765498701640.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.255073",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.255073",
+          "hash": "315e367c428272500a2629eb8b4218c31f5c48ddf6ca5af3a923541867645ee7",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "315e367c428272500a2629eb8b4218c31f5c48ddf6ca5af3a923541867645ee7",
+      "last_synced": "2025-12-12T02:58:01.255073",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_white_screen_fix_1765498701640.webp"
+    },
+    "verify_zero_plugin_1765503277715.webp": {
+      "source": "AGENT_RECEIVED",
+      "created_at": "2025-12-12T02:58:01.261579",
+      "versions": [
+        {
+          "timestamp": "2025-12-12T02:58:01.261579",
+          "hash": "2cb5f66649418367439a93abb76acbdd6c07cd44d6d6269d2a5fa89d5917aefa",
+          "action": "CREATE"
+        }
+      ],
+      "latest_hash": "2cb5f66649418367439a93abb76acbdd6c07cd44d6d6269d2a5fa89d5917aefa",
+      "last_synced": "2025-12-12T02:58:01.261579",
+      "current_path": "C:\\Users\\Administrator\\Desktop\\Universal Pdf\\pdf-cortex\\docs\\brain\\received\\verify_zero_plugin_1765503277715.webp"
+    }
+  }
+}
