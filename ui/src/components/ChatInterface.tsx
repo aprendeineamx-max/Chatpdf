@@ -20,7 +20,7 @@ export default function ChatInterface() {
     const [isLoading, setIsLoading] = useState(false);
     const [swarmMode, setSwarmMode] = useState(false);
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default open
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +41,6 @@ export default function ChatInterface() {
         try {
             const res = await fetch(`http://127.0.0.1:8000/api/v1/sessions/${id}`);
             const data = await res.json();
-            // Map backend messages to UI messages
             const loaded: Message[] = data.map((m: any) => ({
                 id: m.id || Math.random().toString(),
                 role: m.role,
@@ -69,7 +68,6 @@ export default function ChatInterface() {
         setIsLoading(true);
 
         try {
-            // NOTE: Using localhost:8000 directly. 
             const response = await fetch('http://127.0.0.1:8000/api/v1/query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -80,20 +78,14 @@ export default function ChatInterface() {
                     session_id: sessionId
                 })
             });
-
             const data = await response.json();
-
-            if (data.session_id) {
-                setSessionId(data.session_id);
-            }
-
+            if (data.session_id) setSessionId(data.session_id);
             const botMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: data.answer || "Lo siento, no pude entender eso.",
                 sources: data.sources
             };
-
             setMessages(prev => [...prev, botMsg]);
         } catch (error) {
             console.error(error);
@@ -135,7 +127,6 @@ export default function ChatInterface() {
                     </div>
                 </header>
 
-                {/* Control Panel */}
                 <ControlPanel swarmMode={swarmMode} setSwarmMode={setSwarmMode} />
 
                 {/* Messages */}

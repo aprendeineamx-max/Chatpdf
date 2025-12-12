@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MessageSquare, Clock, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePlugins } from '../core/plugins/PluginProvider';
 
 interface Session {
     id: string;
@@ -17,16 +18,13 @@ interface SidebarProps {
     setIsOpen: (val: boolean) => void;
 }
 
-import { usePlugins } from '../core/plugins/PluginProvider'; // [NEW]
-
 export default function Sidebar({ currentSessionId, onSelectSession, onNewChat, isOpen, setIsOpen }: SidebarProps) {
     const [sessions, setSessions] = useState<Session[]>([]);
-    // const { renderSlot } = usePlugins(); // [NEW]
+    const { renderSlot } = usePlugins();
 
     useEffect(() => {
-        // Load sessions on mount and keep polling or refresh logic (simplified for now)
         fetchSessions();
-    }, [currentSessionId]); // Refresh list if current session changes (e.g. new title)
+    }, [currentSessionId]);
 
     const fetchSessions = async () => {
         try {
@@ -44,7 +42,11 @@ export default function Sidebar({ currentSessionId, onSelectSession, onNewChat, 
         <>
             {/* Toggle Button (Mobile/Desktop) */}
             <button
-            // ...
+                onClick={() => setIsOpen(!isOpen)}
+                className={clsx(
+                    "fixed top-4 left-4 z-50 p-2 bg-slate-800 text-slate-400 rounded-lg hover:bg-slate-700 hover:text-white transition-colors shadow-lg border border-slate-700",
+                    isOpen && "left-72" // Move button when sidebar is open
+                )}
             >
                 {isOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
             </button>
@@ -73,7 +75,9 @@ export default function Sidebar({ currentSessionId, onSelectSession, onNewChat, 
                             <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest">
                                 Herramientas
                             </div>
-                            {/* {renderSlot("sidebar-item")} */}
+                            <div className="space-y-1">
+                                {renderSlot("sidebar-item")}
+                            </div>
                         </div>
 
                         {/* Session List */}
@@ -81,7 +85,6 @@ export default function Sidebar({ currentSessionId, onSelectSession, onNewChat, 
                             <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-widest">
                                 Historial
                             </div>
-                            {/* ... Sessions Map ... */}
 
                             {sessions.map((session) => (
                                 <button
