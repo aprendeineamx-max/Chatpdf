@@ -1,0 +1,68 @@
+from pydantic_settings import BaseSettings
+from typing import Optional, List, Any
+
+class Settings(BaseSettings):
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "PDF Cortex"
+    
+    # LLM Keys
+    GROQ_API_KEY: Optional[str] = None
+    # Main Key
+    GOOGLE_API_KEY: Optional[str] = None 
+    # Hydra Keys
+    GOOGLE_API_KEY_1: Optional[str] = None
+    GOOGLE_API_KEY_2: Optional[str] = None
+    GOOGLE_API_KEY_3: Optional[str] = None
+    
+    OPENROUTER_API_KEY: Optional[str] = None
+    
+    # Shared Providers
+    BROWSER_USE_API_KEY: Optional[str] = None
+    
+    # Database Configuration Strategy
+    SUPABASE_TARGET: str = "VPS" # Options: "VPS", "CLOUD"
+
+    # VPS (Self-Hosted) Config
+    VPS_SUPABASE_URL: Optional[str] = None
+    VPS_SUPABASE_KEY: Optional[str] = None
+    VPS_SUPABASE_DB_URL: Optional[str] = None
+
+    # Cloud Config
+    CLOUD_SUPABASE_URL: Optional[str] = None
+    CLOUD_SUPABASE_KEY: Optional[str] = None
+    CLOUD_SUPABASE_DB_URL: Optional[str] = None
+
+    # Resolved Active Config (App uses these)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_DB_URL: Optional[str] = None
+    
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        extra = "ignore"
+
+    def model_post_init(self, __context: Any) -> None:
+        """
+        Dynamically selecting the active configuration based on SUPABASE_TARGET.
+        This runs after the model is initialized from env vars.
+        """
+        super().model_post_init(__context)
+        
+        target = self.SUPABASE_TARGET.upper()
+        
+        if target == "VPS":
+            self.SUPABASE_URL = self.VPS_SUPABASE_URL
+            self.SUPABASE_KEY = self.VPS_SUPABASE_KEY
+            self.SUPABASE_DB_URL = self.VPS_SUPABASE_DB_URL
+        elif target == "CLOUD":
+            self.SUPABASE_URL = self.CLOUD_SUPABASE_URL
+            self.SUPABASE_KEY = self.CLOUD_SUPABASE_KEY
+            self.SUPABASE_DB_URL = self.CLOUD_SUPABASE_DB_URL
+            
+        # Fallback/Validation logging could go here if using a real logger within config logic
+
+settings = Settings()

@@ -1,0 +1,39 @@
+Exploremos
+el mundo
+UNIDAD 1
+59
+Veamos un ejemplo en el que se aplica la información que se obtiene de 
+un censo.
+Los resultados de los censos de1970, 1990, el conteo de población 
+realizado en 1995, y el censo de 2000 demostraron que durante 
+esos años hubo más mujeres analfabetas que hombres. Con base en 
+esta información se ha dado impulso a programas para el desarrollo y 
+participación de la mujer.
+Fuente 
+DGE IX Censo General de Población, 1970
+INEGI. IX Censo General de Población y Vivienda, 1990
+INEGI. Conteo de Población y Vivienda, 1995
+INEGI. XII Censo General de Población y Vivienda, 2000
+21.8
+29.6
+9.6
+15
+8.4
+12.7
+7.4
+11.3
+Porcentaje de analfabetismo de la 
+población de 15 años y más por sexo,
+1970, 1990, 1995 y 2000
+30
+25
+20
+15
+10
+5
+1970	
+1990	
+1995	
+2000
+Años
+Porcentaje

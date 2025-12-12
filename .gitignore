@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+.ipynb_checkpoints/
+data/temp/
+
+# Javascript
+node_modules/
+dist/
+.DS_Store
+
+# Logs
+*.log
+
+# Database
+data/db/*.db
+data/indices/
