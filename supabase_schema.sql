@@ -59,3 +59,34 @@ create table if not exists chat_messages (
 
 -- Index for fast history loading
 create index if not exists idx_messages_session_id on chat_messages(session_id);
+
+-- [NEW] GRAND ARCHITECT TABLES (GENESIS) --
+
+-- 3. Atomic Contexts (The "Folders")
+create table if not exists atomic_contexts (
+  id uuid primary key default gen_random_uuid(),
+  folder_name text not null unique, -- e.g. "2025-12-12_15-03-07_373ddb76"
+  timestamp timestamptz not null,
+  batch_id text, -- e.g. "373ddb76"
+  created_at timestamptz default now()
+);
+
+-- 4. Atomic Artifacts (The "Files")
+create table if not exists atomic_artifacts (
+  id uuid primary key default gen_random_uuid(),
+  context_id uuid references atomic_contexts(id) on delete cascade,
+  filename text not null,
+  file_type text, -- "USER_SENT" or "AGENT_RECEIVED" or "UNKNOWN"
+  file_hash text,
+  local_path text,
+  content text, -- Optional: Text content during search
+  created_at timestamptz default now()
+);
+
+-- 5. Artifact Embeddings (Liquid Memory)
+create table if not exists artifact_embeddings (
+  id uuid primary key default gen_random_uuid(),
+  artifact_id uuid references atomic_artifacts(id) on delete cascade,
+  embedding vector(384),
+  metadata jsonb
+);
