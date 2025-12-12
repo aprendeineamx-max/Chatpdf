@@ -94,29 +94,5 @@ def run_sync_daemon():
                     
                     res_ins = conn.execute(ins_art, {
                         "cid": ctx_id, "fname": filename, "ftype": meta.get("type"), 
-                        "fhash": file_hash, "lpath": file_path, "content": content_text
-                    })
-                    conn.commit()
-                    art_id = res_ins.fetchone()[0]
-                    
-                    # 3. Generate Embedding (Liquid Memory)
-                    if content_text:
-                        print(f"      -> Generating Embeddings...")
-                        vector = embed_model.get_text_embedding(content_text)
-                        
-                        ins_vec = text("""
-                            INSERT INTO artifact_embeddings (artifact_id, embedding, metadata)
-                            VALUES (:aid, :vec, :meta)
-                        """)
-                        conn.execute(ins_vec, {"aid": art_id, "vec": vector, "meta": json.dumps(meta)})
-                        conn.commit()
-                        
-            print("   Sync Cycle Complete. Sleeping 10s...")
-            time.sleep(10)
-            
-        except Exception as e:
-            print(f"❌ Daemon Error: {e}")
-            time.sleep(10)
-
 if __name__ == "__main__":
     run_sync_daemon()

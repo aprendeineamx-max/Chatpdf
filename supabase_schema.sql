@@ -90,3 +90,31 @@ create table if not exists artifact_embeddings (
   embedding vector(384),
   metadata jsonb
 );
+
+-- 6. Agent Skills (Meta-Learning)
+create table if not exists agent_skills (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique, -- Python, React, SQL
+  category text, -- Language, Framework, Tool
+  proficiency int default 0,
+  last_used timestamptz default now()
+);
+
+-- 7. Skill Evidence (Proof of Work)
+create table if not exists skill_evidence (
+  id uuid primary key default gen_random_uuid(),
+  skill_id uuid references agent_skills(id) on delete cascade,
+  context_id uuid references atomic_contexts(id) on delete set null,
+  outcome text, -- SUCCESS, FAILURE
+  timestamp timestamptz default now()
+);
+
+-- 8. Genesis Optimizations (Auto-Correction)
+create table if not exists genesis_optimizations (
+  id uuid primary key default gen_random_uuid(),
+  target_artifact text, -- The file to fix
+  issue_detected text,  -- The error
+  proposed_fix text,    -- The solution
+  status text default 'PENDING', -- PENDING, APPLIED, REJECTED
+  created_at timestamptz default now()
+);
