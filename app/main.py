@@ -2,9 +2,7 @@ from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.services.ingestion.processor import PDFProcessor
-import shutil
-import os
-import uuid
+from app.routers.hive import router as hive_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -12,22 +10,21 @@ app = FastAPI(
     description="API for Advanced PDF RAG System"
 )
 
-# CORS Configuration
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for dev (Vite runs on random ports)
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Register Routers
+app.include_router(hive_router, prefix="/api/hive", tags=["hive-mind"])
 
 # Instance Processor
 processor = PDFProcessor()
 
-@app.get("/")
-def read_root():
-    return {"message": "PDF Cortex is Online", "version": "0.1.0"}
 
 @app.post(f"{settings.API_V1_STR}/ingest")
 async def ingest_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):

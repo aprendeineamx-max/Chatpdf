@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { AtomicContext, AtomicArtifact } from './types';
-import { Folder, FileText, Cpu, Activity, Clock, Database, ShieldCheck } from 'lucide-react';
+import { Folder, FileText, Cpu, Activity, Clock, Database, Users } from 'lucide-react';
 import { SkillGalaxy } from './components/SkillGalaxy';
 import { SelfHealingGalaxy } from './components/SelfHealingGalaxy';
+import { NeuralCouncil } from './components/NeuralCouncil';
 
 function App() {
-    const [view, setView] = useState<'timeline' | 'skills' | 'self-healing'>('timeline');
+    const [view, setView] = useState<'timeline' | 'skills' | 'self-healing' | 'hive'>('timeline');
     const [contexts, setContexts] = useState<AtomicContext[]>([]);
     const [selectedContext, setSelectedContext] = useState<AtomicContext | null>(null);
     const [artifacts, setArtifacts] = useState<AtomicArtifact[]>([]);
@@ -84,6 +85,12 @@ function App() {
                         >
                             HEALING
                         </button>
+                        <button
+                            onClick={() => setView('hive')}
+                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'hive' ? 'bg-amber-900 text-amber-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        >
+                            HIVE
+                        </button>
                     </div>
                 </div>
 
@@ -122,6 +129,8 @@ function App() {
                     <SkillGalaxy />
                 ) : view === 'self-healing' ? (
                     <SelfHealingGalaxy />
+                ) : view === 'hive' ? (
+                    <NeuralCouncil />
                 ) : (
                     selectedContext ? (
                         <div className="flex-1 flex flex-col h-full">
