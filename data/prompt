@@ -14,6 +14,23 @@ Además de que en las siguientes fases podemos integrar más herramientas robust
  
  El Arquitecto Orquestador IA Supremos será un sistema autoregulado que absorbe informacion, la procesa, depura, debuguea, hace pruebas, crea, filtra para obtener calidad de alto nivel consultando directamente la bd del chat del IDE (y de otras fuentes de información especializadas en programación) y este sistema de orquestación y el IDE juntos puedan crear cualquier tipo de aplicación con especificaciones precisas, pudiendo el arquitecto orquestador elaborar todo un RoadMap junto con sus respectivos Prompts orquestadores que debe de seguir al pie de la letra el Agente de IDE. ¡TODO EN SINERGÍA!
 
- 
+
 Ademas de poder darle conexcón omnipotente y omnipresente a los IDE's y a la base de datos en tiempo real para que él mismo obtenga todas las respuestas del IDE, ademas de poder tener acceso completo al Repositorio completo (esto podemos hacerlo con una herramienta que podamos crear para poder darle acceso a nuestra carpeta local en tiempo real a su base de conocimiento en tiempo real al arquitecto supremo) 
 
+.................................................
+
+
+Quiero aún  más conexión con el IDE
+Quiero que pueda leer nuestro chat en tiempo real
+Que sepa cual desde el primer mensaje que me enviaste hasta el último, tambien los que yo te he enviado.
+
+
+Esto es parte de lo que ya te habia pedido anteriomente con respecto al tema de extraer todo de absolutamente todo de nuestro chat (incluidos los artifacts que generas) Incluso habias  hecho un plan para poder mejorar la extracción y ordenamiento estructurado de todo el chat para poder sincronizarlo en tiempo real con la base de datos (y que esta base de datos servirá para poder crear Rags y poder crear cerebros inteligentes para modelos de razonamiento de código, para que aprenda de todo el comportamiento de los agetes, todo lo que piensan, lo que crean, como lo crean, como lo ejecutan, como responden y tambien como interpreta todas las respuestas del humano (promts) es como hacerle una ingenieria inversa a los agentes para poder viseccionar todo su sistema, entenderlo, aprender de él y mejorarlo para poder crear el mejor modelo razonador (Arquitecto Orquestador De Desarrollo de Sotfware)) @agent_brain 
+@docs 
+
+
+
+Ademas de otro RoadMap para que este Arquitecto que lo sabe todo pueda analizar todo el repositorio y la ultima respuesta recibida del agente del IDE conectado para poder crear el mejor prompt y enviarselo automáticamente para que el agente siga trabajando en el Repo y una vez termine de trabajar avisarle al Arquitecto (o Consejo de Arquitectos) y se repita el ciclo (el Agente trabaja, termina y le informa al Arquitecto, el arquitecto lee la respuesta, la analiza/n (consejo de arquetectos IA), elaboran el prompt de respuesta, se lo envian al agente, el agemte trabaja y les vuelve a avisar cuando haya terminado para que nuevamente el Arquitecto (Consejos IA) le vuelva a enviar la siguiente instruccion de acuerdo al Objetivo del Usuario (por ejemplo, crear un sitio web de comercio electronico o E-Learning) y deben de trabajar siempre en bucle hasta lograr con evidncias reales de que la app/software/sitio web esté terminado.
+
+Idea: para iniciar un proceso completo podríamos hacer que podamos conversar con el Arqutecto supremo (http://127.0.0.1:5173/)  en lenuaje natural hasta que ambos tengamos y elaboremos el mejor RoadMap posible a ejecutar y una vez lo tengamos poderlo usar para que él lo use como mapa para guiar al Agente del IDE hasta lograr completar todo el RoadMap.
+Este RoadMap lo puede mostrar (Fijar) en el mismo Dashboard del (http://127.0.0.1:5173/)  y poder llevarlo como un check list donde vaya marcando/registrando el avance que lleva junto con el agente, para que así el usuario pueda ver en tiempo real desde el Dashboard el avance en segundo plano que está teniendo el Arquitecto junto al agente del IDE, hasta lograr ver que ya terminaron y entregaron un reporte administrativo, test aplicados,evidencias, etc... y el ejecutabl o el boton de inicio dentro del mismo Dasboard donde con solo presionarlo pueda redirigirlo al sitio donde podrá ver el resultado / abrir - Ejecutar la app - programa en escritorio/ ir a la carpeta del repo / etc... .

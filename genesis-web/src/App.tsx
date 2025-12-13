@@ -6,9 +6,10 @@ import { Folder, FileText, Cpu, Activity, Clock, Database, Users } from 'lucide-
 import { SkillGalaxy } from './components/SkillGalaxy';
 import { SelfHealingGalaxy } from './components/SelfHealingGalaxy';
 import { NeuralCouncil } from './components/NeuralCouncil';
+import { Orchestrator } from './components/Orchestrator';
 
 function App() {
-    const [view, setView] = useState<'timeline' | 'skills' | 'self-healing' | 'hive'>('timeline');
+    const [view, setView] = useState<'timeline' | 'skills' | 'self-healing' | 'hive' | 'orchestrator'>('timeline');
     const [contexts, setContexts] = useState<AtomicContext[]>([]);
     const [selectedContext, setSelectedContext] = useState<AtomicContext | null>(null);
     const [artifacts, setArtifacts] = useState<AtomicArtifact[]>([]);
@@ -91,6 +92,12 @@ function App() {
                         >
                             HIVE
                         </button>
+                        <button
+                            onClick={() => setView('orchestrator')}
+                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'orchestrator' ? 'bg-indigo-900 text-indigo-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        >
+                            ARCH
+                        </button>
                     </div>
                 </div>
 
@@ -104,8 +111,8 @@ function App() {
                                 key={ctx.id}
                                 onClick={() => handleSelectContext(ctx)}
                                 className={`group p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden ${selectedContext?.id === ctx.id
-                                        ? 'bg-blue-900/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
-                                        : 'bg-[#1a1a20] border-gray-800 hover:border-gray-600 hover:bg-[#202026]'
+                                    ? 'bg-blue-900/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
+                                    : 'bg-[#1a1a20] border-gray-800 hover:border-gray-600 hover:bg-[#202026]'
                                     }`}
                             >
                                 <div className="flex justify-between items-start mb-2">
@@ -131,6 +138,8 @@ function App() {
                     <SelfHealingGalaxy />
                 ) : view === 'hive' ? (
                     <NeuralCouncil />
+                ) : view === 'orchestrator' ? (
+                    <Orchestrator />
                 ) : (
                     selectedContext ? (
                         <div className="flex-1 flex flex-col h-full">

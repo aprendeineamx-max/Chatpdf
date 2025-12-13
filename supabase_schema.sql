@@ -60,6 +60,20 @@ create table if not exists chat_messages (
 -- Index for fast history loading
 create index if not exists idx_messages_session_id on chat_messages(session_id);
 
+-- [RLS POLICIES]
+alter table chat_sessions enable row level security;
+alter table chat_messages enable row level security;
+
+-- Policy: Allow Anon to do everything (Development Mode)
+-- We use 'do nothing' on conflict to allow re-running this file
+do $$ begin
+  create policy "Public Access Sessions" on chat_sessions for all using (true) with check (true);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "Public Access Messages" on chat_messages for all using (true) with check (true);
+exception when duplicate_object then null; end $$;
+
 -- [NEW] GRAND ARCHITECT TABLES (GENESIS) --
 
 -- 3. Atomic Contexts (The "Folders")
@@ -118,3 +132,22 @@ create table if not exists genesis_optimizations (
   status text default 'PENDING', -- PENDING, APPLIED, REJECTED
   created_at timestamptz default now()
 );
+
+-- 9. Orchestrator Tasks (Supreme Architect)
+create table if not exists orchestrator_tasks (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text,
+  status text default 'PENDING', -- PENDING, IN_PROGRESS, DONE, FAILED
+  priority text default 'MEDIUM', -- LOW, MEDIUM, HIGH
+  assigned_agent text default 'auto', -- 'auto', 'coder', 'architect'
+  evidence jsonb default '{}'::jsonb, -- Links to created files/proof
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Policy: Allow Anon to do everything (Development Mode)
+alter table orchestrator_tasks enable row level security;
+do $$ begin
+  create policy "Public Access Tasks" on orchestrator_tasks for all using (true) with check (true);
+exception when duplicate_object then null; end $$;
