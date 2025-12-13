@@ -1,55 +1,83 @@
-from typing import List, Optional
+from typing import List, Dict, Optional
 import itertools
-from app.core.config import settings
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-class KeyManager:
+class SmartKeyManager:
     def __init__(self):
-        self._keys: List[str] = self._load_keys()
-        self._iterator = itertools.cycle(self._keys) if self._keys else None
-        logger.info(f"Hydra KeyManager initialized with {len(self._keys)} keys.")
+        self.providers: Dict[str, List[Dict]] = {
+            "google": [],
+            "groq": [],
+            "openrouter": []
+        }
+        self.max_usage = 1000 # Soft limit before rotation
+        self._load_keys()
 
-    def _load_keys(self) -> List[str]:
+    def _load_keys(self):
         """
-        Aggregates all available Google Keys from settings.
+        Loads keys from settings and initializes their health state.
         """
-        keys = []
-        # Main Key
-        if settings.GOOGLE_API_KEY:
-            keys.append(settings.GOOGLE_API_KEY)
+        # Google
+        g_keys = [k for k in [settings.GOOGLE_API_KEY, settings.GOOGLE_API_KEY_1, settings.GOOGLE_API_KEY_2, settings.GOOGLE_API_KEY_3] if k]
+        self.providers["google"] = [{"key": k, "active": True, "errors": 0} for k in set(g_keys)]
         
-        # Hydra Keys
-        if settings.GOOGLE_API_KEY_1:
-            keys.append(settings.GOOGLE_API_KEY_1)
-        if settings.GOOGLE_API_KEY_2:
-            keys.append(settings.GOOGLE_API_KEY_2)
-        if settings.GOOGLE_API_KEY_3:
-            keys.append(settings.GOOGLE_API_KEY_3)
+        # Groq
+        if settings.GROQ_API_KEY:
+            self.providers["groq"] = [{"key": settings.GROQ_API_KEY, "active": True, "errors": 0}]
             
-        # Deduplicate
-        return list(set(keys))
+        # OpenRouter
+        if settings.OPENROUTER_API_KEY:
+            self.providers["openrouter"] = [{"key": settings.OPENROUTER_API_KEY, "active": True, "errors": 0}]
 
-    def get_next_key(self) -> str:
+        # SambaNova
+        if settings.SAMBANOVA_API_KEY:
+            self.providers["sambanova"] = [{"key": settings.SAMBANOVA_API_KEY, "active": True, "errors": 0}]
+            
+        logger.info(f"SmartKeyManager Loaded: {len(self.providers['google'])} Google, {len(self.providers['groq'])} Groq, {len(self.providers['openrouter'])} OpenRouter, {len(self.providers['sambanova'])} SambaNova.")
+
+    def get_best_key(self, provider: str = "google") -> Optional[str]:
         """
-        Returns the next key in the Round-Robin cycle.
+        Returns the first ACTIVE key for the provider.
+        Round-robin selection among active keys.
         """
-        if not self._iterator:
-            raise ValueError("No Google API Keys configured!")
+        pool = self.providers.get(provider, [])
+        if not pool: return None
         
-        key = next(self._iterator)
-        # Obfuscate for logging
-        safe_key = key[:4] + "..." + key[-4:]
-        logger.debug(f"Rotating to key: {safe_key}")
-        return key
+        # Simple Strategy: Return first active. Real world: Use iterator for round-robin.
+        # Let's rotate the list to simulate round-robin on next call
+        active_keys = [k for k in pool if k["active"]]
+        if not active_keys:
+            logger.error(f"FATAL: All keys for {provider} are dead.")
+            return None
+            
+        # Select first, then rotate list
+        selected_meta = active_keys[0]
+        
+        # Rotate logic: remove from front, add to back in main pool
+        pool.remove(selected_meta)
+        pool.append(selected_meta)
+        
+        return selected_meta["key"]
 
-    def report_error(self, key: str):
+    def report_failure(self, key: str, provider: str = "google"):
         """
-        In the future, this will handle cooldown logic.
-        For now, just logs it.
+        Marks a key as invalid/dead.
         """
-        logger.warning(f"Key {key[:4]}... reported an error. Failover logic triggered.")
+        pool = self.providers.get(provider, [])
+        for meta in pool:
+            if meta["key"] == key:
+                meta["errors"] += 1
+                if meta["errors"] >= 1: # Strict 1-strike policy for 403s
+                    meta["active"] = False
+                    logger.warning(f"Key {key[:4]}... marked DEAD for {provider}.")
+                return
 
-# Global Instance
-key_manager = KeyManager()
+    def get_failover_order(self) -> List[str]:
+        """
+        Returns preferred provider order.
+        """
+        return ["google", "groq", "sambanova", "openrouter"]
+
+key_manager = SmartKeyManager()

@@ -4,6 +4,7 @@ import glob
 import time
 import json
 import hashlib
+import uuid
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -67,36 +68,78 @@ class MindSync:
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
             print(f"📂 Created Atomic Context: {folder_name}")
+            
+            # --- SUPABASE SYNC (OMNISCIENCE) ---
+            self._sync_to_cloud(folder_name, timestamp, batch_id)
+
+    def _sync_to_cloud(self, folder_name, timestamp, batch_id):
+        """
+        Pushes the existence of this context to Supabase Timeline.
+        """
+        try:
+            # We need to import here to avoid global dep issues if not installed
+            from supabase import create_client
+            from app.core.config import settings
+            
+            url = settings.SUPABASE_URL or os.getenv("VITE_SUPABASE_URL")
+            key = settings.SUPABASE_KEY or os.getenv("VITE_SUPABASE_KEY")
+            
+            if not url or not key: 
+                print("⚠️  Supabase keys missing. Skipping cloud sync.")
+                return
+
+            client = create_client(url, key)
+            
+            data = {
+                "id": str(uuid.uuid4()), # Generate a UUID for DB
+                "folder_name": f"Interaction: {batch_id}",
+                "timestamp": timestamp,
+                "batch_id": batch_id,
+                "type": "chat_interaction",
+                "metadata": {"source": "MindSync", "local_folder": folder_name}
+            }
+            
+            client.table("atomic_contexts").insert(data).execute()
+            print(f"☁️  Synced {folder_name} to Liquid Memory.")
+            
+        except ImportError:
+            print("⚠️  Supabase lib not found. Run: pip install supabase")
+        except Exception as e:
+            print(f"⚠️  Cloud Sync Failed: {e}")
+
+    def sync_session(self, found_files):
+        """
+        Syncs a batch of files into a Single Atomic Folder.
+        """
+        if not found_files: return
+
+        # 1. Create Atomic Folder Name
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # Use first file hash as ID seed
+        batch_id = hashlib.sha256(found_files[0].encode()).hexdigest()[:8]
+        folder_name = f"{timestamp}_{batch_id}"
+        
+        target_dir = os.path.join(HISTORY_DIR, folder_name)
+        
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir, exist_ok=True)
+            print(f"📂 Created Atomic Context: {folder_name}")
+            self._sync_to_cloud(folder_name, timestamp, batch_id)
 
         for source_path in found_files:
             filename = os.path.basename(source_path)
-            
             try:
-                # Check for duplications in manifest to avoid re-importing the EXACT same file 
-                # into a new folder if it hasn't changed? 
-                # User wants history. So if I find it again, is it a new message?
-                # For this simplicity, we only import NEW files found in Brain that aren't in Manifest yet.
-                
-                # ... Hash check logic here ...
-                file_hash = calculate_hash(source_path)
-                
-                # COPY
                 dest_path = os.path.join(target_dir, filename)
                 shutil.copy2(source_path, dest_path)
                 
-                # MANIFEST UPDATE
-                ftype = get_file_type(filename)
+                # Manifest Update
                 entry_id = f"{folder_name}/{filename}"
-                
                 self.manifest["files"][entry_id] = {
                     "original_name": filename,
-                    "type": ftype,
                     "atomic_folder": folder_name,
-                    "hash": file_hash,
                     "timestamp": timestamp,
                     "local_path": dest_path
                 }
-                
                 print(f"   -> 📎 {filename}")
                 
             except Exception as e:

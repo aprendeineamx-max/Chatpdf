@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY_3: Optional[str] = None
     
     OPENROUTER_API_KEY: Optional[str] = None
+    SAMBANOVA_API_KEY: Optional[str] = None
     
     # Shared Providers
     BROWSER_USE_API_KEY: Optional[str] = None
