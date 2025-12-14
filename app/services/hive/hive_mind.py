@@ -203,44 +203,80 @@ class HiveMind:
     async def _persist_session(self, session_id: str, title: str):
         """
         Saves the debate to 'atomic_contexts' (Folder) and 'atomic_artifacts' (File).
+        Supports both Cloud (Supabase) and Local (SQLite).
         """
-        if not self.supabase: return
+        timestamp_str = time.strftime('%Y-%m-%d_%H-%M-%S')
+        created_at_fmt = time.strftime('%Y-%m-%dT%H:%M:%S')
         
-        try:
-            # 1. Create Context (The Folder)
-            timestamp_str = time.strftime('%Y-%m-%d_%H-%M-%S')
-            ctx_data = {
-                "id": session_id,
-                "folder_name": f"Council Debate: {title[:40]}...", 
-                "timestamp": timestamp_str,
-                "batch_id": "HIVE",
-                "created_at": time.strftime('%Y-%m-%dT%H:%M:%S')
-            }
+        # Transcript compilation
+        history = self.sessions.get(session_id, [])
+        transcript = f"# Council Debate: {title}\n\n"
+        for msg in history:
+            transcript += f"### **{msg.agent_name}**\n{msg.content}\n\n---\n"
+
+        if settings.CORE_MODE == "LOCAL":
+            # --- LOCAL MODE (SQLite) ---
+            try:
+                from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
+                db = SessionLocal()
+                
+                # 1. Create Context
+                ctx = AtomicContext(
+                    id=session_id,
+                    folder_name=f"Council Debate: {title[:40]}...",
+                    timestamp=datetime.now(),
+                    batch_id="HIVE"
+                )
+                db.add(ctx)
+                
+                # 2. Create Artifact
+                art = AtomicArtifact(
+                    id=str(uuid.uuid4()),
+                    context_id=session_id,
+                    filename="transcript.md",
+                    file_type="GENERATED",
+                    content=transcript,
+                    local_path="HIVE_MEMORY"
+                )
+                db.add(art)
+                
+                db.commit()
+                db.close()
+                logger.info(f"✅ [Local] Session {session_id} persisted to SQLite.")
+            except Exception as e:
+                logger.error(f"❌ [Local] Persistence Failed: {e}")
+
+        else:
+            # --- CLOUD MODE (Supabase) ---
+            if not self.supabase: return
             
-            await asyncio.to_thread(lambda: self.supabase.table("atomic_contexts").insert(ctx_data).execute())
-            
-            # 2. Compile Transcript
-            history = self.sessions.get(session_id, [])
-            transcript = f"# Council Debate: {title}\n\n"
-            for msg in history:
-                transcript += f"### **{msg.agent_name}**\n{msg.content}\n\n---\n"
-            
-            # 3. Create Artifact (The File)
-            art_data = {
-                "id": str(uuid.uuid4()),
-                "context_id": session_id,
-                "filename": "transcript.md",
-                "file_type": "GENERATED",
-                "content": transcript,
-                "local_path": "HIVE_MEMORY",
-                "created_at": time.strftime('%Y-%m-%dT%H:%M:%S')
-            }
-            
-            await asyncio.to_thread(lambda: self.supabase.table("atomic_artifacts").insert(art_data).execute())
-            
-            logger.info(f"Session {session_id} persisted as Context+Artifact.")
-            
-        except Exception as e:
-            logger.error(f"Persistence Failed: {e}")
+            try:
+                # 1. Create Context (The Folder)
+                ctx_data = {
+                    "id": session_id,
+                    "folder_name": f"Council Debate: {title[:40]}...", 
+                    "timestamp": timestamp_str,
+                    "batch_id": "HIVE",
+                    "created_at": created_at_fmt
+                }
+                
+                await asyncio.to_thread(lambda: self.supabase.table("atomic_contexts").insert(ctx_data).execute())
+                
+                # 2. Create Artifact (The File)
+                art_data = {
+                    "id": str(uuid.uuid4()),
+                    "context_id": session_id,
+                    "filename": "transcript.md",
+                    "file_type": "GENERATED",
+                    "content": transcript,
+                    "local_path": "HIVE_MEMORY",
+                    "created_at": created_at_fmt
+                }
+                
+                await asyncio.to_thread(lambda: self.supabase.table("atomic_artifacts").insert(art_data).execute())
+                logger.info(f"Session {session_id} persisted as Context+Artifact.")
+                
+            except Exception as e:
+                logger.error(f"Persistence Failed: {e}")
 
 hive_mind = HiveMind()

@@ -1,5 +1,7 @@
+
 from pydantic_settings import BaseSettings
 from typing import Optional, List, Any
+import os
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
@@ -52,6 +54,16 @@ class Settings(BaseSettings):
         This runs after the model is initialized from env vars.
         """
         super().model_post_init(__context)
+        
+        # [HYBRID CORE LOGIC]
+        core_mode = os.getenv("CORE_MODE", "CLOUD").upper()
+        
+        if core_mode == "LOCAL":
+            print("⚡ HYBRID CORE: Switched to LOCAL (Pulse Mode)")
+            self.SUPABASE_URL = "http://localhost:3000"
+            self.SUPABASE_KEY = os.getenv("LOCAL_SUPABASE_KEY", "my-super-secret-jwt-token-with-at-least-32-chars-long")
+            self.SUPABASE_DB_URL = "postgresql://postgres:postgres@localhost:54322/postgres"
+            return
         
         target = self.SUPABASE_TARGET.upper()
         

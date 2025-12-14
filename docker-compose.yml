@@ -1,0 +1,27 @@
+
+version: '3.8'
+
+services:
+  db:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./data/local_db:/var/lib/postgresql/data
+      - ./data/init:/docker-entrypoint-initdb.d
+
+  rest:
+    image: postgrest/postgrest
+    ports:
+      - "3000:3000"
+    environment:
+      PGRST_DB_URI: postgres://postgres:postgres@db:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: "my-super-secret-jwt-token-with-at-least-32-chars-long" 
+    depends_on:
+      - db

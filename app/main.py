@@ -20,7 +20,18 @@ app.add_middleware(
 )
 
 # Register Routers
+from app.routers.orchestrator import router as orchestrator_router
+from app.routers.system import router as system_router
+
 app.include_router(hive_router, prefix="/api/hive", tags=["hive-mind"])
+app.include_router(orchestrator_router)
+app.include_router(system_router)
+
+@app.on_event("startup")
+async def startup_event():
+    if settings.CORE_MODE == "LOCAL":
+        from app.core.database import init_db
+        init_db()
 
 # Instance Processor
 processor = PDFProcessor()
