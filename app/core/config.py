@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # [HYBRID CORE LOGIC]
+    CORE_MODE: str = "CLOUD" # Default, overridden by .env
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -55,10 +58,14 @@ class Settings(BaseSettings):
         """
         super().model_post_init(__context)
         
-        # [HYBRID CORE LOGIC]
-        core_mode = os.getenv("CORE_MODE", "CLOUD").upper()
+        # Load CORE_MODE from Env explicitly if Pydantic didn't catch it
+        # (It should catch it from env_file if it matches case, but we force checking os just in case)
+        if not self.CORE_MODE: 
+             self.CORE_MODE = os.getenv("CORE_MODE", "CLOUD").upper()
+        else:
+             self.CORE_MODE = self.CORE_MODE.upper()
         
-        if core_mode == "LOCAL":
+        if self.CORE_MODE == "LOCAL":
             print("⚡ HYBRID CORE: Switched to LOCAL (Pulse Mode)")
             self.SUPABASE_URL = "http://localhost:3000"
             self.SUPABASE_KEY = os.getenv("LOCAL_SUPABASE_KEY", "my-super-secret-jwt-token-with-at-least-32-chars-long")
