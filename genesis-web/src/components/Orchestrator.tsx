@@ -1,5 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Send, CheckCircle2, Circle, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowUp, ArrowDown, X, FileCode, Folder, ArrowLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import Editor from '@monaco-editor/react';
+
+// Helper to determine language
+function getLanguageFromPath(path: string): string {
+    if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript';
+    if (path.endsWith('.js') || path.endsWith('.jsx')) return 'javascript';
+    if (path.endsWith('.py')) return 'python';
+    if (path.endsWith('.json')) return 'json';
+    if (path.endsWith('.html')) return 'html';
+    if (path.endsWith('.css')) return 'css';
+    if (path.endsWith('.md')) return 'markdown';
+    if (path.endsWith('.sql')) return 'sql';
+    if (path.endsWith('.yaml') || path.endsWith('.yml')) return 'yaml';
+    return 'plaintext';
+}
 
 // Use the API URL from environment or default to local backend
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -266,8 +281,9 @@ export function Orchestrator() {
                 throw new Error("API Failed");
             }
 
-        } catch (e) {
-            alert("Ingest request failed. Ensure backend is running.");
+        } catch (e: any) {
+            console.error("Ingestion Error:", e);
+            alert(`Ingest request failed: ${e.message || "Unknown Error"}. Check console for details.`);
         }
     };
 
@@ -633,27 +649,38 @@ export function Orchestrator() {
                             </div>
 
                             {/* Editor View */}
-                            <div className="flex-1 bg-[#0f0f13] flex flex-col">
+                            <div className="flex-1 bg-[#1e1e1e] flex flex-col overflow-hidden">
                                 {selectedFile ? (
                                     <>
-                                        <div className="h-10 border-b border-gray-800 bg-[#16161a] flex items-center px-4 justify-between">
-                                            <div className="flex items-center gap-2 text-sm text-gray-200 font-medium">
-                                                <FileCode className="w-4 h-4 text-blue-400" />
+                                        {/* Tab Bar Style Header */}
+                                        <div className="h-9 border-b border-[#252526] bg-[#2d2d2d] flex items-center px-4 justify-between">
+                                            <div className="flex items-center gap-2 text-xs text-[#cccccc] font-medium bg-[#1e1e1e] h-full px-3 border-t-2 border-blue-500">
+                                                <FileCode className="w-3.5 h-3.5 text-blue-400" />
                                                 {selectedFile.name}
+                                                <X className="w-3 h-3 hover:bg-gray-700 rounded p-0.5 ml-2 cursor-pointer" onClick={() => setSelectedFile(null)} />
                                             </div>
                                         </div>
-                                        <div className="flex-1 overflow-auto p-4 custom-scrollbar">
-                                            <pre className="text-sm font-mono text-gray-300 whitespace-pre-wrap">
-                                                {selectedFile.content}
-                                            </pre>
+                                        <div className="flex-1 overflow-hidden">
+                                            <Editor
+                                                height="100%"
+                                                language={getLanguageFromPath(selectedFile.name)}
+                                                theme="vs-dark"
+                                                value={selectedFile.content}
+                                                options={{
+                                                    readOnly: true,
+                                                    minimap: { enabled: true },
+                                                    scrollBeyondLastLine: false,
+                                                    fontSize: 14,
+                                                    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+                                                    padding: { top: 10 }
+                                                }}
+                                            />
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-gray-600 gap-4">
-                                        <div className="w-20 h-20 rounded-full bg-[#1a1a20] flex items-center justify-center">
-                                            <Database className="w-10 h-10 text-gray-700" />
-                                        </div>
-                                        <p>Select a file to examine its neural pathways.</p>
+                                    <div className="flex-1 flex flex-col items-center justify-center text-[#555] gap-4">
+                                        <div className="opacity-20 text-9xl font-sans font-bold">VS</div>
+                                        <p className="text-sm">Select a file from the explorer to view code.</p>
                                     </div>
                                 )}
                             </div>

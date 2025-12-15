@@ -10,6 +10,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@monaco-editor/react": "^4.7.0",
         "@supabase/supabase-js": "^2.46.1",
         "date-fns": "^4.1.0",
         "framer-motion": "^11.11.17",
