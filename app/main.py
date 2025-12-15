@@ -22,10 +22,12 @@ app.add_middleware(
 # Register Routers
 from app.routers.orchestrator import router as orchestrator_router
 from app.routers.system import router as system_router
+from app.routers.ingest import router as ingest_router
 
 app.include_router(hive_router, prefix="/api/hive", tags=["hive-mind"])
 app.include_router(orchestrator_router)
 app.include_router(system_router)
+app.include_router(ingest_router)
 
 @app.on_event("startup")
 async def startup_event():
