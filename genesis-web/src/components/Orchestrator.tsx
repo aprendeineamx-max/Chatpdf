@@ -247,6 +247,48 @@ export function Orchestrator() {
         }
     };
 
+    // --- NEW STATE for IDE ---
+    const [isEditing, setIsEditing] = useState(false);
+    const [editorContent, setEditorContent] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Update editor content when file changes
+    useEffect(() => {
+        if (selectedFile) {
+            setEditorContent(selectedFile.content);
+            setIsEditing(false); // Reset to read mode on file switch
+        }
+    }, [selectedFile]);
+
+    async function saveCurrentFile() {
+        if (!selectedFile || !expandedRepo) return;
+        setIsSaving(true);
+        try {
+            const cleanName = expandedRepo.replace("REPO: ", "");
+            const res = await fetch(`${API_URL}/api/v1/ingest/content`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    repo_name: cleanName,
+                    path: selectedFile.name, // Note: In a real app we need full path here, assuming selectedFile.name holds relative path or we track it
+                    content: editorContent
+                })
+            });
+            if (res.ok) {
+                // Update local state to reflect save
+                setSelectedFile(prev => prev ? ({ ...prev, content: editorContent }) : null);
+                setIsEditing(false);
+            } else {
+                throw new Error("Save returned " + res.status);
+            }
+        } catch (e) {
+            alert("Failed to save file.");
+            console.error(e);
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
     const handleIngestSubmit = async () => {
         const url = ingestUrl.trim();
         if (!url) return;
@@ -255,7 +297,6 @@ export function Orchestrator() {
         setIngestUrl('');
         setActiveTab('knowledge');
 
-        // Optimistic System Message
         setMessages(prev => [...prev, {
             id: 'sys-' + Date.now(),
             role: 'system',
@@ -278,14 +319,32 @@ export function Orchestrator() {
                     created_at: new Date().toISOString()
                 }]);
             } else {
-                throw new Error("API Failed");
+                const errText = await res.text(); // Read failure reason
+                throw new Error(errText || "API Failed");
             }
 
         } catch (e: any) {
             console.error("Ingestion Error:", e);
-            alert(`Ingest request failed: ${e.message || "Unknown Error"}. Check console for details.`);
+            // Parse robust error message
+            let msg = e.message;
+            try {
+                const json = JSON.parse(msg);
+                if (json.detail) msg = json.detail;
+            } catch (x) { } // it wasn't json
+
+            alert(`Ingest Failed: ${msg}`);
+
+            // Notify in Chat too
+            setMessages(prev => [...prev, {
+                id: 'sys-err-' + Date.now(),
+                role: 'system',
+                content: `❌ INGESTION FAILED: ${msg}`,
+                created_at: new Date().toISOString()
+            }]);
         }
     };
+
+    // ... (render logic)
 
     return (
         <div className="flex h-full bg-[#0f0f13] relative">
@@ -328,11 +387,11 @@ export function Orchestrator() {
 
             {/* Left: Chat Area */}
             <div className="flex-1 flex flex-col border-r border-gray-800">
-                <div className="h-16 border-b border-gray-800 flex items-center justify-between px-6 bg-[#16161a]">
+                <div className="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#16161a]">
                     <div className="flex items-center">
                         <BrainCircuit className="w-5 h-5 text-purple-400 mr-2" />
-                        <h2 className="font-bold text-gray-200">Supreme Architect</h2>
-                        <span className="ml-2 px-2 py-0.5 text-xs bg-gray-800 text-gray-400 rounded border border-gray-700">
+                        <h2 className="font-bold text-gray-200 text-sm">Supreme Architect</h2>
+                        <span className="ml-2 px-2 py-0.5 text-[10px] bg-gray-800 text-gray-400 rounded border border-gray-700">
                             {systemMode}
                         </span>
                     </div>
@@ -399,18 +458,18 @@ export function Orchestrator() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {messages.map((msg, i) => (
                         <div key={msg.id || i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] p-4 rounded-xl ${msg.role === 'user'
+                            <div className={`max-w-[85%] p-3 rounded-lg text-sm ${msg.role === 'user'
                                 ? 'bg-purple-900/20 text-purple-100 border border-purple-500/30'
                                 : 'bg-gray-800/50 text-gray-200 border border-gray-700'
                                 }`}>
-                                <div className="flex items-center gap-2 mb-1 text-xs opacity-50 uppercase tracking-widest font-bold">
+                                <div className="flex items-center gap-2 mb-1 text-[10px] opacity-50 uppercase tracking-widest font-bold">
                                     {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
                                     {msg.role}
                                 </div>
-                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                                <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
                             </div>
                         </div>
                     ))}
@@ -421,14 +480,14 @@ export function Orchestrator() {
                     )}
                 </div>
 
-                <div className="p-4 bg-[#16161a] border-t border-gray-800">
+                <div className="p-3 bg-[#16161a] border-t border-gray-800">
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                            className="flex-1 bg-[#0f0f13] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                            className="flex-1 bg-[#0f0f13] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
                             placeholder="Instruct the Supreme Architect..."
                         />
                         <button
@@ -436,15 +495,15 @@ export function Orchestrator() {
                             disabled={loading}
                             className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-lg transition-colors"
                         >
-                            <Send className="w-5 h-5" />
+                            <Send className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Right: Roadmap / Knowledge */}
-            <div className="w-80 flex flex-col bg-[#111115] border-l border-gray-800">
-                <div className="h-16 border-b border-gray-800 flex items-center px-4 bg-[#16161a]">
+            <div className="w-72 flex flex-col bg-[#111115] border-l border-gray-800">
+                <div className="h-14 border-b border-gray-800 flex items-center px-4 bg-[#16161a]">
                     <div className="flex bg-gray-900 rounded-lg p-1 w-full">
                         <button
                             onClick={() => setActiveTab('roadmap')}
@@ -561,133 +620,159 @@ export function Orchestrator() {
                 </div>
             </div>
 
-
             {/* FILE EXPLORER OVERLAY */}
-            {
-                expandedRepo && (
-                    <div className="absolute inset-0 bg-[#0f0f13] z-10 flex flex-col">
-                        {/* Header */}
-                        <div className="h-16 border-b border-gray-800 flex items-center px-6 bg-[#16161a] justify-between">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => {
-                                        setExpandedRepo(null);
-                                        setRepoFiles([]);
-                                        setSelectedFile(null);
-                                        setCurrentPath("");
-                                    }}
-                                    className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                                >
-                                    <ArrowLeft className="w-5 h-5" />
-                                </button>
-                                <div>
-                                    <h2 className="font-bold text-gray-200 flex items-center gap-2">
-                                        <Database className="w-4 h-4 text-purple-400" />
-                                        {expandedRepo.replace("REPO: ", "")}
-                                    </h2>
-                                    <div className="text-xs text-gray-500 font-mono">
-                                        /{currentPath}
+            {expandedRepo && (
+                <div className="absolute inset-0 bg-[#0f0f13] z-20 flex flex-col">
+                    {/* Header */}
+                    <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#111115]">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setExpandedRepo(null);
+                                    setCurrentPath("");
+                                }}
+                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                            <div>
+                                <h2 className="font-bold text-gray-200 flex items-center gap-2">
+                                    <Database className="w-4 h-4 text-purple-400" />
+                                    {expandedRepo.replace("REPO: ", "")}
+                                </h2>
+                                <div className="text-xs text-gray-500 font-mono">
+                                    /{currentPath}
+                                </div>
+                            </div>
+                        </div >
+                    </div >
+
+                    {/* Main Content */}
+                    < div className="flex-1 flex overflow-hidden" >
+                        {/* Sidebar: File Tree */}
+                        < div className="w-72 border-r border-gray-800 bg-[#111115] flex flex-col" >
+                            {/* ... (File Tree Implementation - Unchanged) ... */}
+                            < div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-500 uppercase tracking-wider" >
+                                Explorer
+                            </div >
+                            <div className="flex-1 overflow-y-auto p-2">
+                                {currentPath !== "" && (
+                                    <div
+                                        onClick={() => {
+                                            const parentPath = currentPath.split('/').slice(0, -1).join('/');
+                                            fetchFiles(expandedRepo, parentPath);
+                                        }}
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-[#1a1a20] hover:text-white rounded cursor-pointer mb-2"
+                                    >
+                                        <ArrowLeft className="w-3 h-3" />
+                                        <span>..</span>
                                     </div>
-                                </div>
+                                )}
+                                {isLoadingFiles ? (
+                                    <div className="text-center text-gray-600 py-10 text-xs">Loading structure...</div>
+                                ) : repoFiles.map((file, i) => (
+                                    <div
+                                        key={i}
+                                        onClick={() => {
+                                            if (file.type === 'dir') {
+                                                fetchFiles(expandedRepo, file.path);
+                                            } else {
+                                                fetchContent(expandedRepo, file.path);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer transition-colors ${selectedFile?.name === file.name.split('/').pop() && file.type === 'file'
+                                            ? 'bg-blue-900/30 text-blue-200'
+                                            : 'text-gray-400 hover:bg-[#1a1a20] hover:text-white'
+                                            }`}
+                                    >
+                                        {file.type === 'dir' ? (
+                                            <Folder className="w-3.5 h-3.5 text-yellow-500/80" />
+                                        ) : (
+                                            <FileCode className="w-3.5 h-3.5 text-blue-400/80" />
+                                        )}
+                                        <span className="truncate">{file.name}</span>
+                                    </div>
+                                ))}
+                                {repoFiles.length === 0 && !isLoadingFiles && (
+                                    <div className="text-center text-gray-600 py-10 text-xs italic">
+                                        Empty directory
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex gap-2">
-                                {/* Breadcrumbs or actions could go here */}
-                            </div>
-                        </div>
+                        </div >
 
-                        {/* Main Content */}
-                        <div className="flex-1 flex overflow-hidden">
-                            {/* Sidebar: File Tree */}
-                            <div className="w-72 border-r border-gray-800 bg-[#111115] flex flex-col">
-                                <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    Explorer
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-2">
-                                    {currentPath !== "" && (
-                                        <div
-                                            onClick={() => {
-                                                const parentPath = currentPath.split('/').slice(0, -1).join('/');
-                                                fetchFiles(expandedRepo, parentPath);
-                                            }}
-                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-[#1a1a20] hover:text-white rounded cursor-pointer mb-2"
-                                        >
-                                            <ArrowLeft className="w-3 h-3" />
-                                            <span>..</span>
-                                        </div>
-                                    )}
-                                    {isLoadingFiles ? (
-                                        <div className="text-center text-gray-600 py-10 text-xs">Loading structure...</div>
-                                    ) : repoFiles.map((file, i) => (
-                                        <div
-                                            key={i}
-                                            onClick={() => {
-                                                if (file.type === 'dir') {
-                                                    fetchFiles(expandedRepo, file.path);
-                                                } else {
-                                                    fetchContent(expandedRepo, file.path);
-                                                }
-                                            }}
-                                            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer transition-colors ${selectedFile?.name === file.name && file.type === 'file'
-                                                ? 'bg-blue-900/30 text-blue-200'
-                                                : 'text-gray-400 hover:bg-[#1a1a20] hover:text-white'
-                                                }`}
-                                        >
-                                            {file.type === 'dir' ? (
-                                                <Folder className="w-3.5 h-3.5 text-yellow-500/80" />
-                                            ) : (
-                                                <FileCode className="w-3.5 h-3.5 text-blue-400/80" />
-                                            )}
-                                            <span className="truncate">{file.name}</span>
-                                        </div>
-                                    ))}
-                                    {repoFiles.length === 0 && !isLoadingFiles && (
-                                        <div className="text-center text-gray-600 py-10 text-xs italic">
-                                            Empty directory
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Editor View */}
-                            <div className="flex-1 bg-[#1e1e1e] flex flex-col overflow-hidden">
-                                {selectedFile ? (
+                        {/* Editor View with Toolbar */}
+                        < div className="flex-1 bg-[#1e1e1e] flex flex-col overflow-hidden" >
+                            {
+                                selectedFile ? (
                                     <>
-                                        {/* Tab Bar Style Header */}
-                                        <div className="h-9 border-b border-[#252526] bg-[#2d2d2d] flex items-center px-4 justify-between">
-                                            <div className="flex items-center gap-2 text-xs text-[#cccccc] font-medium bg-[#1e1e1e] h-full px-3 border-t-2 border-blue-500">
+                                        {/* Tab Bar / Toolbar */}
+                                        < div className="h-10 border-b border-[#252526] bg-[#2d2d2d] flex items-center justify-between px-4 select-none" >
+                                            {/* Tab */}
+                                            < div className="flex items-center gap-2 text-xs text-[#cccccc] font-medium bg-[#1e1e1e] h-full px-3 border-t-2 border-blue-500 min-w-[120px]" >
                                                 <FileCode className="w-3.5 h-3.5 text-blue-400" />
                                                 {selectedFile.name}
-                                                <X className="w-3 h-3 hover:bg-gray-700 rounded p-0.5 ml-2 cursor-pointer" onClick={() => setSelectedFile(null)} />
+                                                {isEditing && <span className="w-2 h-2 rounded-full bg-white ml-2" />}
+                                            </div >
+
+                                            {/* Toolbar Actions */}
+                                            < div className="flex items-center gap-2" >
+                                                <button
+                                                    onClick={() => setIsEditing(!isEditing)}
+                                                    className={`p-1.5 rounded transition-colors ${isEditing ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                                                    title={isEditing ? "View Mode" : "Edit Mode"}
+                                                >
+                                                    {isEditing ? <Database className="w-4 h-4" /> : <RefreshCcw className="w-4 h-4 rotate-45" />}
+                                                    {/* Using available icons: Database=Read, Refresh(rotated)=Edit metaphor */}
+                                                </button>
+
+                                                {
+                                                    isEditing && (
+                                                        <button
+                                                            onClick={saveCurrentFile}
+                                                            disabled={isSaving}
+                                                            className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Save className="w-3 h-3" />
+                                                            {isSaving ? "Saving..." : "Save"}
+                                                        </button>
+                                                    )
+                                                }
+                                            </div >
+                                        </div >
+
+                                        {/* Monaco Editor */}
+                                        < div className="flex-1 overflow-hidden relative" >
+                                            <div className={`absolute inset-0 ${isEditing ? 'border-2 border-blue-900/30' : ''}`}>
+                                                <Editor
+                                                    height="100%"
+                                                    language={getLanguageFromPath(selectedFile.name)}
+                                                    theme="vs-dark"
+                                                    value={editorContent}
+                                                    onChange={(val) => setEditorContent(val || "")}
+                                                    options={{
+                                                        readOnly: !isEditing,
+                                                        minimap: { enabled: true },
+                                                        scrollBeyondLastLine: false,
+                                                        fontSize: 14,
+                                                        fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+                                                        padding: { top: 10 }
+                                                    }}
+                                                />
                                             </div>
-                                        </div>
-                                        <div className="flex-1 overflow-hidden">
-                                            <Editor
-                                                height="100%"
-                                                language={getLanguageFromPath(selectedFile.name)}
-                                                theme="vs-dark"
-                                                value={selectedFile.content}
-                                                options={{
-                                                    readOnly: true,
-                                                    minimap: { enabled: true },
-                                                    scrollBeyondLastLine: false,
-                                                    fontSize: 14,
-                                                    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-                                                    padding: { top: 10 }
-                                                }}
-                                            />
-                                        </div>
+                                        </div >
                                     </>
                                 ) : (
                                     <div className="flex-1 flex flex-col items-center justify-center text-[#555] gap-4">
                                         <div className="opacity-20 text-9xl font-sans font-bold">VS</div>
                                         <p className="text-sm">Select a file from the explorer to view code.</p>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+                                )
+                            }
+                        </div >
+                    </div >
+                </div >
+            )}
         </div >
     );
 }

@@ -141,3 +141,29 @@ def get_file_content(repo_name: str, path: str):
             return {"content": f.read()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class SaveFileRequest(BaseModel):
+    repo_name: str
+    path: str
+    content: str
+
+@router.post("/content")
+def save_file_content(req: SaveFileRequest):
+    """
+    Overwrites the content of a specific file.
+    """
+    import os
+    from app.services.knowledge.repo_ingestor import SHARED_REPOS_DIR
+    
+    safe_repo = req.repo_name.replace("..", "").replace("/", "").replace("\\", "")
+    full_path = os.path.join(SHARED_REPOS_DIR, safe_repo, req.path.lstrip("/"))
+    
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="File to save not found. Create not supported yet.")
+        
+    try:
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(req.content)
+        return {"status": "success", "message": "File saved."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Save failed: {str(e)}")

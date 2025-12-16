@@ -3,7 +3,7 @@ import requests
 import time
 
 # URL provided by user
-target_repo = "https://github.com/aprendeineamx-max/Autopoiesis"
+target_repo = "https://github.com/aprendeineamx-max/crawlbase-mcp"
 
 url = "http://127.0.0.1:8000/api/v1/ingest/repo"
 payload = {"url": target_repo}
