@@ -436,10 +436,16 @@ export function Orchestrator() {
                         onChange={(e) => setSelectedModel(e.target.value)}
                         className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-gray-500 transition-colors"
                     >
-                        <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (SambaNova)</option>
-                        <option value="DeepSeek-R1-Distill-Llama-70B">🧠 DeepSeek R1 (SambaNova)</option>
-                        <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
-                        <option value="gemini-2.0-flash-exp">💎 Gemini 2.0 Flash</option>
+                        <optgroup label="SambaNova - DeepSeek">
+                            <option value="DeepSeek-R1">🧠 DeepSeek R1</option>
+                            <option value="DeepSeek-R1-Distill-Llama-70B">🧪 DeepSeek R1 Distill 70B</option>
+                            <option value="DeepSeek-V3-0324">🤖 DeepSeek V3 (0324)</option>
+                            <option value="Deepseek-V3.1">🚀 DeepSeek V3.1</option>
+                        </optgroup>
+                        <optgroup label="SambaNova - Meta Llama">
+                            <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (Latest)</option>
+                            <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
+                        </optgroup>
                     </select>
 
                     {/* System Mode Toggle */}

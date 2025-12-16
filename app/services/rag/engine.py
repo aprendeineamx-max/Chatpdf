@@ -123,8 +123,8 @@ if not SAFE_MODE:
             # 2. Google Fallback (If not SambaNova)
             # HARDCODED SUCCESS KEY (User Provided Index #1)
             active_key = "AIzaSyC4xyNQ6BcsXzckzIeUFdfvhjaXUtHkRK4"
-            # Use 2.0 Flash Exp as requested/verified
-            gemini_model = "models/gemini-2.0-flash-exp" 
+            # Revert to stable 1.5 Flash
+            gemini_model = "gemini-1.5-flash" 
             return CustomGemini(model_name=gemini_model, api_key=active_key)
 
         def query(self, query_text: str, pdf_id: str, model: str = None):
