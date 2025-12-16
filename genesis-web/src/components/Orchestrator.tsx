@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, CheckCircle2, Circle, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowUp, ArrowDown, X, FileCode, Folder, ArrowLeft, Layout, ArrowRight, MessageSquare, Copy, Trash2, Brain } from 'lucide-react'; // [FIX] Added Brain
 import Editor from '@monaco-editor/react';
 import { AtomicContext, AtomicArtifact } from '../types';
@@ -110,6 +110,16 @@ export function Orchestrator() {
         return () => clearInterval(interval);
     }, []);
 
+    // --- Auto-Scroll ---
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
     // Update editor content when file changes
     useEffect(() => {
         if (selectedFile) {
@@ -179,8 +189,8 @@ export function Orchestrator() {
         if (!silent) setLoading(true);
         try {
             const [tasksRes, reposRes] = await Promise.all([
-                fetch(`${API_URL}/api/v1/tasks`),
-                fetch(`${API_URL}/api/v1/repo/list`)
+                fetch(`${API_URL}/api/v1/orchestrator/tasks`), // [FIX] Updated endpoint
+                fetch(`${API_URL}/api/v1/ingest/list`)        // [FIX] Updated endpoint
             ]);
 
             if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -333,7 +343,8 @@ export function Orchestrator() {
             const botMsg: Message = {
                 role: 'assistant',
                 content: data.answer || "I processed that but have no specific answer.",
-                sources: data.sources
+                sources: data.sources,
+                model: data.model
             };
             setMessages(prev => [...prev, botMsg]);
 
@@ -365,7 +376,7 @@ export function Orchestrator() {
             const res = await fetch(`${API_URL}/api/v1/ingest/repo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ repo_url: url })
+                body: JSON.stringify({ url: url }) // [FIX] Changed repo_url to url
             });
 
             if (res.ok) {
@@ -375,18 +386,30 @@ export function Orchestrator() {
                     content: `✅ INGESTION QUEUED. The Architect is analyzing...`,
                     created_at: new Date().toISOString()
                 }]);
+                loadData(true);
             } else {
-                const errText = await res.text();
-                throw new Error(errText || "API Failed");
+                const errData = await res.json().catch(() => ({ detail: "Unknown Error" }));
+                // [FIX] Ensure detail is a string to avoid [object Object]
+                const detailStr = typeof errData.detail === 'object' ? JSON.stringify(errData.detail) : (errData.detail || `Server Error ${res.status}`);
+                throw new Error(detailStr);
             }
 
         } catch (e: any) {
             console.error("Ingestion Error:", e);
-            let msg = e.message;
+            let msg = "Unknown Error";
+
+            if (e instanceof Error) msg = e.message;
+            else if (typeof e === 'string') msg = e;
+            else {
+                try { msg = JSON.stringify(e); } catch { msg = String(e); }
+                if (msg === "{}") msg = "Check console for details (Error Object)";
+            }
+
+            // Try to parse if it looks like JSON
             try {
-                const json = JSON.parse(msg);
-                if (json.detail) msg = json.detail;
-            } catch (x) { }
+                const parsed = JSON.parse(msg);
+                if (parsed.detail) msg = parsed.detail;
+            } catch { }
 
             alert(`Ingest Failed: ${msg}`);
 
@@ -561,6 +584,7 @@ export function Orchestrator() {
                             );
                         })}
                         {messages.length === 0 && <div className="text-center text-gray-600 mt-20">Start a new conversation.</div>}
+                        <div ref={messagesEndRef} />
                     </div>
 
                     {/* Input */}

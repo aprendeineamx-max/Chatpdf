@@ -79,19 +79,46 @@ def get_tasks(db: Session = Depends(get_db)):
 # --- BACKGROUND WORKER ---
 
 async def generate_response_local(user_text: str, session_id: str, db: Session):
-    # This function needs its own session if async? 
-    # Actually, background tasks run in threadpool, so standard blocking session is risky if not scoped.
-    # We'll re-create session for safety or use the passed one CAREFULLY (not recommended if request closes).
-    # Better: New session.
-    from app.core.database import SessionLocal
-    local_db = SessionLocal()
-    
+    debug_path = r"C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\debug_rag_context.txt"
     try:
-        print(f"🧠 [Local] Thinking about: {user_text}")
-        context = f"User: {user_text}\nRole: Supreme Architect. Guide the user."
+        with open(debug_path, "a", encoding="utf-8") as f:
+            f.write(f"\n\n--- NEW REQUEST: {user_text} ---\n")
+            
+        from app.core.database import SessionLocal, AtomicArtifact
+        from app.services.chat.history import history_service
+        local_db = SessionLocal()
         
-        # Call LLM (HiveMind uses API Keys which are separate from DB keys, so this works!)
-        # The LLM key (Google/Groq) works even if Supabase is dead.
+        print(f"🧠 [Local] Thinking about: {user_text}")
+        
+        # 1. RAG Retrieval (Simple Injection of Repo Summaries)
+        artifacts = local_db.query(AtomicArtifact).filter(AtomicArtifact.filename == "file_structure.tree").all()
+        
+        with open(debug_path, "a", encoding="utf-8") as f:
+            f.write(f"Found {len(artifacts)} artifacts.\n")
+
+        knowledge_context = ""
+        if artifacts:
+            knowledge_context += "\n\nAVAILABLE REPOSITORIES:\n"
+            for art in artifacts:
+                # Robust path handling for Windows/Linux strings
+                path = art.local_path.replace("\\", "/") # Normalize to forward slashes
+                repo_name = path.split("/")[-1]
+                
+                with open(debug_path, "a", encoding="utf-8") as f:
+                     f.write(f"Injecting {repo_name}\n")
+                
+                knowledge_context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:4000]}\n" # Increased limit
+
+        # Also try to fetch summaries if query mentions "repo" or "code"
+        if "repo" in user_text.lower() or "code" in user_text.lower() or "access" in user_text.lower():
+             pass
+
+        context = f"User: {user_text}\nRole: Supreme Architect. Guide the user.\n{knowledge_context}"
+        
+        with open(debug_path, "a", encoding="utf-8") as f:
+             f.write("FULL CONTEXT:\n" + context + "\n----------------\n")
+        
+        # Call LLM
         response_text = await hive_mind._generate_response("ARCHITECT", context)
         
         # Save Agent Response
@@ -103,9 +130,45 @@ async def generate_response_local(user_text: str, session_id: str, db: Session):
         )
         local_db.add(agent_msg)
         local_db.commit()
+        
+        # 2. Extract Tasks (Roadmap)
+        if "road map" in user_text.lower() or "roadmap" in user_text.lower() or "plan" in user_text.lower():
+            try:
+                # Direct extraction to ensure it works
+                import re
+                from app.core.database import OrchestratorTask
+                
+                tasks = []
+                # numbered lists 1. Task
+                matches = re.findall(r'^\d+\.\s+(.*)', response_text, re.MULTILINE)
+                tasks.extend(matches)
+                # bullet points - Task
+                matches_bullets = re.findall(r'^-\s+(.*)', response_text, re.MULTILINE)
+                tasks.extend(matches_bullets)
+                
+                for t_title in tasks:
+                    clean_title = t_title.strip("**").strip()
+                    if len(clean_title) > 3:
+                        task = OrchestratorTask(
+                            id=str(uuid.uuid4()),
+                            title=clean_title,
+                            status="PENDING",
+                            assigned_agent="ARCHITECT"
+                        )
+                        local_db.add(task)
+                local_db.commit()
+                print(f"✅ [Local] Extracted {len(tasks)} tasks.")
+            except Exception as e_task:
+                print(f"⚠️ Task Extraction Error: {e_task}")
+
         print("✅ [Local] Replied.")
         
     except Exception as e:
         print(f"❌ [Local] Error: {e}")
+        try:
+             with open(debug_path, "a", encoding="utf-8") as f:
+                 f.write(f"CRITICAL ERROR: {e}\n")
+        except: pass
     finally:
-        local_db.close()
+        try: local_db.close()
+        except: pass

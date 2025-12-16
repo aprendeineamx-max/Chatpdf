@@ -47,10 +47,65 @@ class ChatHistoryService:
             db.add(ai_msg)
             
             db.commit()
+
+            # [NEW] Simple Task Extraction for "Road Map" requests
+            # If the user asked for a plan/roadmap, try to extract numbered items as tasks.
+            # Heuristic: User query contains "road map" or "roadmap" or "plan"
+            if any(k in user_query.lower() for k in ["road map", "roadmap", "plan", "tareas", "todo"]):
+                self._extract_and_save_tasks(session_id, ai_response, db)
+
         except Exception as e:
             logger.error(f"Save Interaction Error: {e}")
         finally:
             db.close()
+
+    def _extract_and_save_tasks(self, session_id: str, text: str, db: SessionLocal):
+        import re
+        from app.core.database import OrchestratorTask
+        
+        # Regex for "1. Task Title" or "- Task Title"
+        # We'll be generous and capture anything that looks like a list item
+        # patterns: 
+        #   1. **Title**: Description
+        #   1. Title
+        #   - **Title**
+        
+        lines = text.split('\n')
+        tasks_found = []
+        
+        for line in lines:
+            line = line.strip()
+            # Check for numbered list "1. Task"
+            match_num = re.match(r'^\d+\.\s+(.*)', line)
+            if match_num:
+                tasks_found.append(match_num.group(1))
+                continue
+                
+            # Check for generic bullet "- Task"
+            match_bull = re.match(r'^-\s+(.*)', line)
+            if match_bull:
+                content = match_bull.group(1)
+                # Filter out short bullets that might be just conversational
+                if len(content) > 5: 
+                    tasks_found.append(content)
+        
+        # Save to DB
+        for t_title in tasks_found:
+            # Clean formatting (remove ** **)
+            clean_title = t_title.replace('**', '').split(':')[0].strip() # Take first part if colon exists
+            
+            new_task = OrchestratorTask(
+                id=str(uuid.uuid4()),
+                title=clean_title[:100], # Trucate for title
+                description=t_title,     # Full text in description
+                status="PENDING",
+                evidence={"source_session": session_id}
+            )
+            db.add(new_task)
+        
+        if tasks_found:
+            db.commit()
+            logger.info(f"✅ Auto-extracted {len(tasks_found)} tasks from roadmap.")
 
     def get_session_history(self, session_id: str):
         db = SessionLocal()

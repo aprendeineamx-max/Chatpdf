@@ -106,10 +106,44 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             session_id = chat_history.create_session(title=request.query_text[:30])
         
         # 2. Execute Logic
+        
+        # [NEW] RAG Injection (Repo Structure)
+        from app.core.database import SessionLocal, AtomicArtifact
+        db = SessionLocal()
+        knowledge_context = ""
+        try:
+             # Fetch Structure
+             artifacts = db.query(AtomicArtifact).filter(AtomicArtifact.filename == "file_structure.tree").all()
+             
+             # Fetch Content Summaries (READMEs, etc.)
+             summaries = db.query(AtomicArtifact).filter(AtomicArtifact.filename == "repo_summary.md").all()
+             
+             if artifacts:
+                knowledge_context += "\n\nAVAILABLE REPOSITORIES:\n"
+                for art in artifacts:
+                    path = art.local_path.replace("\\", "/") 
+                    repo_name = path.split("/")[-1]
+                    knowledge_context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:2000]}\n"
+                    
+                # Match summaries to repos (simplistic for now, assuming 1:1 or just dumping all)
+                if summaries:
+                    for sum_art in summaries:
+                         path = sum_art.local_path.replace("\\", "/") 
+                         repo_name = path.split("/")[-1]
+                         knowledge_context += f"\n--- CONTENT SUMMARY FOR {repo_name} ---\n{sum_art.content[:6000]}\n" # Generous limit for READMEs
+                         
+        except Exception as e_rag:
+            print(f"RAG Injection Error: {e_rag}")
+        finally:
+            db.close()
+
+        # Prepend context to query
+        final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
+
         if request.mode == "swarm":
-            response = await rag_service.query_swarm(request.query_text, request.pdf_id, model=request.model)
+            response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
         else:
-            response = rag_service.query(request.query_text, request.pdf_id, model=request.model)
+            response = rag_service.query(final_query, request.pdf_id, model=request.model)
             
         # 3. Save History (Async)
         if isinstance(response, dict):
