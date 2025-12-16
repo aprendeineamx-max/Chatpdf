@@ -458,9 +458,9 @@ export function Orchestrator() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
                     {messages.map((msg, i) => (
-                        <div key={msg.id || i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div key={msg.id || i} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] p-3 rounded-lg text-sm ${msg.role === 'user'
                                 ? 'bg-purple-900/20 text-purple-100 border border-purple-500/30'
                                 : 'bg-gray-800/50 text-gray-200 border border-gray-700'
@@ -469,7 +469,7 @@ export function Orchestrator() {
                                     {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
                                     {msg.role}
                                 </div>
-                                <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                                <div className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</div>
                             </div>
                         </div>
                     ))}
