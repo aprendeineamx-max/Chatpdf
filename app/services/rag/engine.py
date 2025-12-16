@@ -81,7 +81,8 @@ if not SAFE_MODE:
                 "top_p": 0.1
             }
             try:
-                response = requests.post(url, headers=headers, json=data, timeout=30)
+                # [UPDATE] Increased timeout for DeepSeek R1 (Reasoning models are slow)
+                response = requests.post(url, headers=headers, json=data, timeout=120) 
                 if response.status_code == 200:
                     text_resp = response.json()['choices'][0]['message']['content']
                     return CompletionResponse(text=text_resp)
@@ -132,9 +133,13 @@ if not SAFE_MODE:
             try:
                  llm = self._get_llm(model_override=model)
                  resp = llm.complete(f"Answer this user question based on your general knowledge (RAG Unavailable): {query_text}")
-                 return {"answer": resp.text, "sources": []}
+                 return {
+                     "answer": resp.text, 
+                     "sources": [],
+                     "model": llm.model_name
+                 }
             except Exception as e:
-                return {"answer": f"RAG Error: {str(e)}", "sources": []}
+                return {"answer": f"RAG Error: {str(e)}", "sources": [], "model": "Error"}
 
         async def query_swarm(self, query_text: str, pdf_id: str, model: str = None):
              return self.query(query_text, pdf_id, model=model)
