@@ -74,14 +74,19 @@ if not SAFE_MODE:
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
             }
+            # [UPDATE] System Prompt to enforce Spanish
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant. You must ALWAYS respond in Spanish (Español), even if the user speaks English. Format your answers nicely."},
+                {"role": "user", "content": prompt}
+            ]
             data = {
                 "model": self.model_name,
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": messages,
                 "temperature": 0.1,
                 "top_p": 0.1
             }
             try:
-                # [UPDATE] Increased timeout for DeepSeek R1 (Reasoning models are slow)
+                # [UPDATE] Increased timeout to 120s for reasoning models
                 response = requests.post(url, headers=headers, json=data, timeout=120) 
                 if response.status_code == 200:
                     text_resp = response.json()['choices'][0]['message']['content']
