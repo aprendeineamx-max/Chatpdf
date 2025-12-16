@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { Send, CheckCircle2, Circle, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowUp, ArrowDown, X, FileCode, Folder, ArrowLeft, Layout, ArrowRight } from 'lucide-react';
+import { Send, CheckCircle2, Circle, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowUp, ArrowDown, X, FileCode, Folder, ArrowLeft, Layout, ArrowRight, MessageSquare, Copy, Trash2 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { AtomicContext, AtomicArtifact } from '../types';
 
@@ -34,6 +35,7 @@ interface Message {
     content: string;
     id?: string | number;
     created_at?: string;
+    sources?: string[];
 }
 
 interface FileNode {
@@ -56,6 +58,11 @@ export function Orchestrator() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [isPolling, setIsPolling] = useState(false);
+
+    // Session State
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+    const [sessions, setSessions] = useState<{ id: string, title: string, created_at: string }[]>([]);
+    const [showHistory, setShowHistory] = useState(true);
 
     // System State
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
@@ -86,6 +93,7 @@ export function Orchestrator() {
 
     // Initial Load & Polling (Pulse Mode)
     useEffect(() => {
+        loadSessions(); // Load history
         loadData();
         fetchSystemStatus();
 
@@ -107,7 +115,89 @@ export function Orchestrator() {
         }
     }, [selectedFile]);
 
-    // Fetch Files for Explorer
+    // --- Session Management ---
+    async function loadSessions() {
+        try {
+            const res = await fetch(`${API_URL}/api/v1/sessions`);
+            if (res.ok) {
+                const data = await res.json();
+                setSessions(data);
+            }
+        } catch (e) { console.error("Failed to load sessions", e); }
+    }
+
+    async function handleNewChat() {
+        setMessages([]);
+        setCurrentSessionId(null);
+        loadSessions();
+    }
+
+    async function handleSelectSession(sessionId: string) {
+        setCurrentSessionId(sessionId);
+        setLoading(true);
+        try {
+            const res = await fetch(`${API_URL}/api/v1/sessions/${sessionId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(data);
+            }
+        } catch (e) {
+            console.error("Failed to load session history", e);
+        } finally {
+            setLoading(false);
+        }
+        if (window.innerWidth < 1024) setShowHistory(false);
+    }
+
+    async function handleCloneSession(sessionId: string, e: React.MouseEvent) {
+        e.stopPropagation();
+        try {
+            const res = await fetch(`${API_URL}/api/v1/sessions/${sessionId}/clone`, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                await loadSessions();
+                handleSelectSession(data.session_id);
+            }
+        } catch (e) { console.error("Failed to clone session", e); }
+    }
+
+    async function handleDeleteSession(sessionId: string, e: React.MouseEvent) {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this chat?")) return;
+        try {
+            await fetch(`${API_URL}/api/v1/sessions/${sessionId}`, { method: 'DELETE' });
+            if (currentSessionId === sessionId) handleNewChat();
+            loadSessions();
+        } catch (e) { console.error("Failed to delete session", e); }
+    }
+
+    // --- Data Loaders ---
+    async function loadData(silent = false) {
+        if (!silent) setLoading(true);
+        try {
+            const [tasksRes, reposRes] = await Promise.all([
+                fetch(`${API_URL}/api/v1/tasks`),
+                fetch(`${API_URL}/api/v1/repo/list`)
+            ]);
+
+            if (tasksRes.ok) setTasks(await tasksRes.json());
+            if (reposRes.ok) setRepos(await reposRes.json());
+
+        } catch (error) {
+            console.error('Connection Error:', error);
+            if (!silent) setMessages(prev => [...prev, { role: 'system', content: 'Connection to Genesis Core lost. Retrying...' }]);
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    }
+
+    async function fetchSystemStatus() {
+        try {
+            const res = await fetch(`${API_URL}/health`);
+        } catch (e) { console.error("Health check failed", e); }
+    }
+
+    // --- File Explorer Logic ---
     async function fetchFiles(repoName: string, path: string) {
         setIsLoadingFiles(true);
         try {
@@ -122,7 +212,6 @@ export function Orchestrator() {
         finally { setIsLoadingFiles(false); }
     }
 
-    // Fetch File Content
     async function fetchContent(repoName: string, path: string) {
         const cleanName = repoName.replace("REPO: ", "");
         try {
@@ -131,10 +220,7 @@ export function Orchestrator() {
                 const data = await res.json();
                 setSelectedFile({ name: path.split('/').pop() || 'File', content: data.content });
             }
-        } catch (e) {
-            console.error(e);
-            alert("Failed to load file content.");
-        }
+        } catch (e) { console.error(e); alert("Failed to load file content."); }
     }
 
     async function saveCurrentFile() {
@@ -147,75 +233,21 @@ export function Orchestrator() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     repo_name: cleanName,
-                    path: selectedFile.name, // Note: In a real app we need full path here, assuming selectedFile.name or currentPath logic is handled
+                    path: selectedFile.name,
                     content: editorContent
                 })
             });
             if (res.ok) {
-                // Update local state to reflect save
                 setSelectedFile(prev => prev ? ({ ...prev, content: editorContent }) : null);
                 setIsEditing(false);
-            } else {
-                throw new Error("Save returned " + res.status);
-            }
+            } else { throw new Error("Save returned " + res.status); }
         } catch (e) {
             alert("Failed to save file.");
             console.error(e);
-        } finally {
-            setIsSaving(false);
-        }
+        } finally { setIsSaving(false); }
     }
 
-    async function loadData(silent = false) {
-        try {
-            await Promise.all([fetchTasks(), fetchHistory(), fetchRepos()]);
-        } catch (e) {
-            if (!silent) console.error("Pulse Failed:", e);
-            setIsPolling(false);
-        }
-    }
-
-    async function fetchSystemStatus() {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/system/status`);
-            if (res.ok) {
-                const data = await res.json();
-                setSystemMode(data.mode);
-            }
-        } catch (e) { console.error("Status check failed", e); }
-    }
-
-    async function fetchTasks() {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/orchestrator/tasks`);
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) setTasks(data);
-            }
-        } catch (e) { /* ignore poll error */ }
-    }
-
-    async function fetchHistory() {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/orchestrator/chat`);
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) setMessages(data);
-            }
-        } catch (e) { /* ignore poll error */ }
-    }
-
-    async function fetchRepos() {
-        try {
-            const res = await fetch(`${API_URL}/api/v1/ingest/list`);
-            if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data)) setRepos(data);
-            }
-        } catch (e) { /* ignore */ }
-    }
-
-    // --- SYSTEM ACTIONS ---
+    // --- System Actions ---
     const switchMode = async () => {
         const newMode = systemMode === "LOCAL" ? "CLOUD" : "LOCAL";
         if (!confirm(`Switch to ${newMode}? Backend will require restart.`)) return;
@@ -243,10 +275,9 @@ export function Orchestrator() {
 
     const triggerBackup = async () => {
         const content = input;
-        setInput(''); // Clear immediately
+        setInput('');
 
         try {
-            // Optimistic update
             const tempId = 'temp-' + Date.now();
             setMessages(prev => [...prev, {
                 id: tempId,
@@ -255,57 +286,60 @@ export function Orchestrator() {
                 created_at: new Date().toISOString()
             }]);
 
-            const res = await fetch(`${API_URL}/api/v1/orchestrator/chat`, {
+            await fetch(`${API_URL}/api/v1/orchestrator/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content, role: 'user' })
             });
 
-            if (!res.ok) throw new Error("API Error");
-
-            // Reload to get the real ID and any immediate agent response
             await loadData(true);
-
         } catch (error) {
             console.error("Chat Error:", error);
             alert("Failed to send message to Local Core. Is the backend running?");
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     };
 
     const sendMessage = async () => {
-        if (!input.trim() || loading) return;
+        if (!input.trim()) return;
 
-        const content = input;
+        const userMsg: Message = { role: 'user', content: input };
+        setMessages(prev => [...prev, userMsg]);
         setInput('');
         setLoading(true);
 
-        // Optimistic UI
-        const tempId = 'temp-' + Date.now();
-        setMessages(prev => [...prev, {
-            id: tempId,
-            role: 'user',
-            content: content,
-            created_at: new Date().toISOString()
-        }]);
-
         try {
-            const res = await fetch(`${API_URL}/api/v1/orchestrator/chat`, {
+            const res = await fetch(`${API_URL}/api/v1/query`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, role: 'user' })
+                body: JSON.stringify({
+                    query_text: userMsg.content,
+                    pdf_id: "all",
+                    mode: systemMode === 'CLOUD' ? 'swarm' : 'standard',
+                    session_id: currentSessionId
+                }),
             });
 
-            if (!res.ok) throw new Error("Failed to send");
+            const data = await res.json();
 
-            // Refresh to get AI response
-            await loadData(true);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
+            if (data.session_id && data.session_id !== currentSessionId) {
+                setCurrentSessionId(data.session_id);
+                loadSessions();
+            }
+
+            const botMsg: Message = {
+                role: 'assistant',
+                content: data.answer || "I processed that but have no specific answer.",
+                sources: data.sources
+            };
+            setMessages(prev => [...prev, botMsg]);
+
+            if (data.tasks) loadData(true);
+
+        } catch (error: any) {
+            console.error("Chat Error:", error);
+            const msg = error.message || "Unknown Error";
+            setMessages(prev => [...prev, { role: 'system', content: `Error: ${msg}` }]);
+        } finally { setLoading(false); }
     };
 
     const handleIngestSubmit = async () => {
@@ -338,7 +372,7 @@ export function Orchestrator() {
                     created_at: new Date().toISOString()
                 }]);
             } else {
-                const errText = await res.text(); // Read failure reason
+                const errText = await res.text();
                 throw new Error(errText || "API Failed");
             }
 
@@ -362,446 +396,229 @@ export function Orchestrator() {
     };
 
     return (
-        <div className="flex h-full bg-[#0f0f13] relative overflow-hidden">
-            {/* INGEST MODAL */}
-            {showIngestModal && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                    <div className="bg-[#1a1a20] border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-                        <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-[#16161a]">
-                            <h3 className="font-bold text-gray-200 flex items-center gap-2">
-                                <Cloud className="w-5 h-5 text-purple-400" />
-                                Ingest GitHub Repository
-                            </h3>
-                            <button onClick={() => setShowIngestModal(false)} className="text-gray-500 hover:text-white">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            <p className="text-sm text-gray-400 mb-4">
-                                Enter the full HTTPS URL of the public repository you want the Architect to study.
-                            </p>
+        <div className="flex flex-col h-full bg-[#111115] text-white relative overflow-hidden">
+            {/* Header */}
+            <header className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#16161a] shrink-0 z-10">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowHistory(!showHistory)}
+                        className={`p-2 rounded hover:bg-gray-800 transition-colors ${showHistory ? 'text-blue-400' : 'text-gray-400'}`}
+                        title="Toggle History"
+                    >
+                        <Layout className="w-5 h-5" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                        <span className="font-bold tracking-wide text-sm hidden sm:inline">GENESIS ORCHESTRATOR</span>
+                    </div>
+                    {/* Status Pill */}
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono border ${isPolling ? 'bg-emerald-900/30 border-emerald-500/30 text-emerald-400' : 'bg-red-900/30 border-red-500/30 text-red-400'}`}>
+                        {isPolling ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                        {isPolling ? 'ONLINE' : 'OFFLINE'}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleNewChat}
+                        className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors"
+                    >
+                        <RefreshCcw className="w-3.5 h-3.5" />
+                        New Chat
+                    </button>
+
+                    {/* System Mode Toggle */}
+                    <div className="flex bg-black/40 p-1 rounded-lg border border-gray-800">
+                        <button
+                            onClick={() => setSystemMode("LOCAL")}
+                            className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${systemMode === "LOCAL" ? "bg-indigo-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}
+                        >
+                            LOCAL
+                        </button>
+                        <button
+                            onClick={() => setSystemMode("CLOUD")}
+                            className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${systemMode === "CLOUD" ? "bg-purple-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}
+                        >
+                            CLOUD
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden">
+
+                {/* History Sidebar */}
+                <div className={`${showHistory ? 'w-64 border-r' : 'w-0'} border-gray-800 bg-[#131316] transition-all duration-300 flex flex-col overflow-hidden`}>
+                    <div className="p-3 border-b border-gray-800">
+                        <button
+                            onClick={handleNewChat}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-md text-xs font-medium transition-colors"
+                        >
+                            <RefreshCcw className="w-4 h-4" />
+                            New Conversation
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        {sessions.map(session => (
+                            <div
+                                key={session.id}
+                                onClick={() => handleSelectSession(session.id)}
+                                className={`group flex items-center justify-between p-2 rounded-md cursor-pointer text-xs ${currentSessionId === session.id ? 'bg-indigo-900/30 text-indigo-200 border border-indigo-500/30' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}
+                            >
+                                <div className="flex items-center gap-2 truncate flex-1">
+                                    <MessageSquare className="w-3.5 h-3.5 flex-shrink-0" />
+                                    <span className="truncate">{session.title || "Untitled Chat"}</span>
+                                </div>
+                                <div className="hidden group-hover:flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => handleCloneSession(session.id, e)}
+                                        className="p-1 hover:bg-blue-900/50 rounded text-blue-400"
+                                        title="Clone / Fork Chat"
+                                    >
+                                        <Copy className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleDeleteSession(session.id, e)}
+                                        className="p-1 hover:bg-red-900/50 rounded text-red-400"
+                                        title="Delete Chat"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Left: Chat Area (Visible if Active) */}
+                <div className={`flex-1 flex flex-col min-w-0 border-r border-gray-800 ${activeTab === 'roadmap' ? 'block' : 'hidden md:block'}`}>
+                    {/* Chat Messages */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+                        {messages.map((msg, i) => (
+                            <div key={msg.id || i} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[90%] sm:max-w-[85%] p-3 rounded-lg text-sm ${msg.role === 'user'
+                                    ? 'bg-purple-900/20 text-purple-100 border border-purple-500/30'
+                                    : 'bg-gray-800/50 text-gray-200 border border-gray-700'
+                                    }`}>
+                                    <div className="flex items-center gap-2 mb-1 text-[10px] opacity-50 uppercase tracking-widest font-bold">
+                                        {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
+                                        {msg.role}
+                                    </div>
+                                    <div className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</div>
+                                </div>
+                            </div>
+                        ))}
+                        {messages.length === 0 && <div className="text-center text-gray-600 mt-20">Start a new conversation.</div>}
+                    </div>
+
+                    {/* Input */}
+                    <div className="p-3 bg-[#16161a] border-t border-gray-800">
+                        <div className="flex gap-2">
                             <input
                                 type="text"
-                                autoFocus
-                                placeholder="https://github.com/username/repo"
-                                className="w-full bg-[#0f0f13] border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 mb-4"
-                                value={ingestUrl}
-                                onChange={(e) => setIngestUrl(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleIngestSubmit()}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                                className="flex-1 bg-[#0f0f13] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
+                                placeholder="Instruct the Supreme Architect..."
                             />
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400 hover:text-white text-sm">Cancel</button>
-                                <button onClick={handleIngestSubmit} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                                    Start Ingestion
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Mobile Panel Backdrop */}
-            {isMobilePanelOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 xl:hidden backdrop-blur-sm"
-                    onClick={() => setIsMobilePanelOpen(false)}
-                />
-            )}
-
-            {/* Left: Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
-                <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 sm:px-6 bg-[#16161a]">
-                    <div className="flex items-center min-w-0">
-                        <BrainCircuit className="w-5 h-5 text-purple-400 mr-2 flex-shrink-0" />
-                        <h2 className="font-bold text-gray-200 text-sm truncate">Supreme Architect</h2>
-                        <span className="ml-2 px-2 py-0.5 text-[10px] bg-gray-800 text-gray-400 rounded border border-gray-700 flex-shrink-0">
-                            {systemMode}
-                        </span>
-                    </div>
-
-                    {/* System Menu & Mobile Toggle */}
-                    <div className="flex items-center gap-3">
-                        {/* Mobile Panel Toggle */}
-                        <button
-                            onClick={() => setIsMobilePanelOpen(!isMobilePanelOpen)}
-                            className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition-colors xl:hidden"
-                        >
-                            <Layout className="w-5 h-5" />
-                        </button>
-
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowMenu(!showMenu)}
-                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition-colors"
-                                title="System Settings"
-                            >
-                                <RefreshCcw className="w-4 h-4" />
-                            </button>
-
-                            {showMenu && (
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a20] border border-gray-700 rounded-lg shadow-xl z-40 p-1">
-                                    <div className="text-xs font-bold text-gray-500 px-3 py-2 uppercase">Neural Link</div>
-                                    <button onClick={switchMode} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded flex items-center gap-2">
-                                        {systemMode === 'LOCAL' ? <Cloud className="w-3 h-3" /> : <Database className="w-3 h-3" />}
-                                        Switch to {systemMode === 'LOCAL' ? 'Cloud' : 'Local'}
-                                    </button>
-                                    <div className="h-px bg-gray-700 my-1"></div>
-                                    <button onClick={() => triggerSync("PULL")} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded flex items-center gap-2">
-                                        <ArrowDown className="w-3 h-3 text-blue-400" />
-                                        Pull from Cloud
-                                    </button>
-                                    <button onClick={() => triggerSync("PUSH")} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded flex items-center gap-2">
-                                        <ArrowUp className="w-3 h-3 text-green-400" />
-                                        Push to Cloud
-                                    </button>
-                                    <div className="h-px bg-gray-700 my-1"></div>
-                                    <button onClick={triggerBackup} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded flex items-center gap-2">
-                                        <Save className="w-3 h-3 text-yellow-500" />
-                                        Backup Local DB
-                                    </button>
-                                    <div className="h-px bg-gray-700 my-1"></div>
-                                    <button onClick={() => {
-                                        setShowMenu(false);
-                                        setShowIngestModal(true);
-                                    }} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 rounded flex items-center gap-2 cursor-pointer">
-                                        <Cloud className="w-3 h-3 text-purple-400" />
-                                        Ingest Repo (Vision)
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Status Indicator */}
-                        <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 border-l border-gray-800 pl-4">
-                            {isPolling ? (
-                                <>
-                                    <Wifi className="w-3 h-3 text-green-500" />
-                                    <span className="hidden sm:inline">ONLINE</span>
-                                </>
-                            ) : (
-                                <>
-                                    <WifiOff className="w-3 h-3 text-red-500" />
-                                    <span className="hidden sm:inline">OFFLINE</span>
-                                </>
-                            )}
+                            <button onClick={sendMessage} disabled={loading} className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-lg"><Send className="w-4 h-4" /></button>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
-                    {messages.map((msg, i) => (
-                        <div key={msg.id || i} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[90%] sm:max-w-[85%] p-3 rounded-lg text-sm ${msg.role === 'user'
-                                ? 'bg-purple-900/20 text-purple-100 border border-purple-500/30'
-                                : 'bg-gray-800/50 text-gray-200 border border-gray-700'
-                                }`}>
-                                <div className="flex items-center gap-2 mb-1 text-[10px] opacity-50 uppercase tracking-widest font-bold">
-                                    {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
-                                    {msg.role}
-                                </div>
-                                <div className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</div>
-                            </div>
-                        </div>
-                    ))}
-                    {messages.length === 0 && (
-                        <div className="text-center text-gray-600 mt-20">
-                            No history found. Connection established.
-                        </div>
-                    )}
-                </div>
-
-                <div className="p-3 bg-[#16161a] border-t border-gray-800">
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                            className="flex-1 bg-[#0f0f13] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500"
-                            placeholder="Instruct the Supreme Architect..."
-                        />
-                        <button
-                            onClick={sendMessage}
-                            disabled={loading}
-                            className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded-lg transition-colors flex-shrink-0"
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
+                {/* Right Panel: Knowledge/Files */}
+                <div className="w-80 border-l border-gray-800 flex flex-col bg-[#111115]">
+                    <div className="flex border-b border-gray-800">
+                        <button onClick={() => setActiveTab('roadmap')} className={`flex-1 py-3 text-xs font-bold ${activeTab === 'roadmap' ? 'text-purple-400 border-b-2 border-purple-500' : 'text-gray-500'}`}>TASKS</button>
+                        <button onClick={() => setActiveTab('knowledge')} className={`flex-1 py-3 text-xs font-bold ${activeTab === 'knowledge' ? 'text-purple-400 border-b-2 border-purple-500' : 'text-gray-500'}`}>KNOWLEDGE</button>
                     </div>
-                </div>
-            </div>
 
-            {/* Right: Roadmap / Knowledge (Responsive) */}
-            <div className={`
-                fixed inset-y-0 right-0 z-40 w-80 bg-[#111115] border-l border-gray-800 flex flex-col transition-transform duration-300 ease-in-out shadow-2xl
-                xl:static xl:w-72 xl:translate-x-0 xl:shadow-none
-                ${isMobilePanelOpen ? 'translate-x-0' : 'translate-x-full'}
-            `}>
-                <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#16161a]">
-                    <div className="flex bg-gray-900 rounded-lg p-1 w-full mr-2">
-                        <button
-                            onClick={() => setActiveTab('roadmap')}
-                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'roadmap' ? 'bg-purple-600 text-white shadow' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            ROADMAP
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('knowledge')}
-                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${activeTab === 'knowledge' ? 'bg-purple-600 text-white shadow' : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            KNOWLEDGE
-                        </button>
-                    </div>
-                    {/* Close Button for Mobile */}
-                    <button
-                        onClick={() => setIsMobilePanelOpen(false)}
-                        className="xl:hidden p-1 text-gray-500 hover:text-white"
-                    >
-                        <ArrowRight className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {activeTab === 'roadmap' ? (
-                        <>
-                            {tasks.map(task => (
-                                <div key={task.id} className="bg-[#1a1a20] p-3 rounded-lg border border-gray-800 flex items-start gap-3 hover:border-purple-500/30 transition-all">
-                                    {task.status === 'DONE' ? (
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                    ) : task.status === 'IN_PROGRESS' ? (
-                                        <div className="w-5 h-5 rounded-full border-2 border-yellow-500 border-t-transparent animate-spin mt-0.5 flex-shrink-0" />
-                                    ) : (
-                                        <Circle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-                                    )}
-                                    <div className="min-w-0">
-                                        <div className="text-sm font-medium text-gray-200 truncate">{task.title}</div>
-                                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                            <span className="bg-gray-800 px-1 rounded truncate max-w-[100px]">{task.assigned_agent}</span>
-                                            {task.status}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        {activeTab === 'roadmap' ? (
+                            <div className="space-y-3">
+                                {tasks.map(task => (
+                                    <div key={task.id} className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="font-medium text-sm text-gray-200">{task.title}</span>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${task.status === 'DONE' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'}`}>{task.status}</span>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {tasks.length === 0 && (
-                                <div className="text-sm text-gray-600 text-center italic mt-10">
-                                    Roadmap empty. Wait for Architect assignments.
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            {repos.map(repo => {
-                                let StatusIcon = Database;
-                                let statusColor = "text-blue-400";
-                                let isSpinning = false;
-                                let statusLabel = "READY";
-
-                                if (repo.status === "CLONING" || repo.status === "CLONING_GIT") {
-                                    StatusIcon = RefreshCcw;
-                                    statusColor = "text-yellow-400";
-                                    isSpinning = true;
-                                    statusLabel = "CLONING";
-                                } else if (repo.status === "ANALYZING" || repo.status === "SAVING") {
-                                    StatusIcon = BrainCircuit;
-                                    statusColor = "text-purple-400";
-                                    isSpinning = true;
-                                    statusLabel = "ANALYZING";
-                                } else if (repo.status === "FAILED") {
-                                    StatusIcon = WifiOff;
-                                    statusColor = "text-red-500";
-                                    statusLabel = "FAILED";
-                                }
-
-                                return (
-                                    <div key={repo.id}
-                                        onClick={() => {
-                                            if (repo.status === "CLONING" || repo.status === "ANALYZING") return;
-                                            setExpandedRepo(repo.name);
-                                            fetchFiles(repo.name, "");
-                                        }}
-                                        className="bg-[#1a1a20] p-3 rounded-lg border border-gray-800 hover:border-blue-500/30 transition-all group cursor-pointer relative overflow-hidden"
-                                    >
-                                        {isSpinning && (
-                                            <div className="absolute top-0 left-0 w-full h-0.5 bg-gray-700">
-                                                <div className="h-full bg-blue-500 animate-[loading_1s_ease-in-out_infinite]"></div>
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <StatusIcon className={`w-4 h-4 ${statusColor} ${isSpinning ? 'animate-spin' : ''} flex-shrink-0`} />
-                                            <div className="text-sm font-bold text-gray-200 truncate" title={repo.name}>
-                                                {repo.name.replace('REPO: ', '')}
-                                            </div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                                            <Bot className="w-3 h-3" /> {task.assigned_agent}
                                         </div>
-                                        <div className="text-xs text-gray-500 flex justify-between items-center">
-                                            <span>
-                                                {repo.status === 'FAILED'
-                                                    ? <span className="text-red-400" title={repo.error}>{repo.error ? 'Error (Hover)' : 'Failed'}</span>
-                                                    : (repo.timestamp ? new Date(repo.timestamp).toLocaleDateString() : 'Just now')
-                                                }
-                                            </span>
-                                            <span className={`text-[10px] uppercase font-bold tracking-wider ${statusColor}`}>
-                                                {statusLabel}
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {repos.length === 0 && (
-                                <div className="text-sm text-gray-600 text-center italic mt-10">
-                                    No repositories ingested yet.
-                                </div>
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* FILE EXPLORER OVERLAY */}
-            {expandedRepo && (
-                <div className="absolute inset-0 bg-[#0f0f13] z-50 flex flex-col">
-                    {/* Header */}
-                    <div className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#111115]">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => {
-                                    setExpandedRepo(null);
-                                    setCurrentPath("");
-                                }}
-                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            >
-                                <ArrowLeft className="w-5 h-5" />
-                            </button>
-                            <div>
-                                <h2 className="font-bold text-gray-200 flex items-center gap-2">
-                                    <Database className="w-4 h-4 text-purple-400" />
-                                    {expandedRepo.replace("REPO: ", "")}
-                                </h2>
-                                <div className="text-xs text-gray-500 font-mono">
-                                    /{currentPath}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 flex overflow-hidden">
-                        {/* Sidebar: File Tree */}
-                        <div className="w-72 border-r border-gray-800 bg-[#111115] flex flex-col hidden lg:flex">
-                            <div className="p-3 border-b border-gray-800 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Explorer
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-2">
-                                {currentPath !== "" && (
-                                    <div
-                                        onClick={() => {
-                                            const parentPath = currentPath.split('/').slice(0, -1).join('/');
-                                            fetchFiles(expandedRepo, parentPath);
-                                        }}
-                                        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-[#1a1a20] hover:text-white rounded cursor-pointer mb-2"
-                                    >
-                                        <ArrowLeft className="w-3 h-3" />
-                                        <span>..</span>
-                                    </div>
-                                )}
-                                {isLoadingFiles ? (
-                                    <div className="text-center text-gray-600 py-10 text-xs">Loading structure...</div>
-                                ) : repoFiles.map((file, i) => (
-                                    <div
-                                        key={i}
-                                        onClick={() => {
-                                            if (file.type === 'dir') {
-                                                fetchFiles(expandedRepo, file.path);
-                                            } else {
-                                                fetchContent(expandedRepo, file.path);
-                                            }
-                                        }}
-                                        className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded cursor-pointer transition-colors ${selectedFile?.name === file.name.split('/').pop() && file.type === 'file'
-                                            ? 'bg-blue-900/30 text-blue-200'
-                                            : 'text-gray-400 hover:bg-[#1a1a20] hover:text-white'
-                                            }`}
-                                    >
-                                        {file.type === 'dir' ? (
-                                            <Folder className="w-3.5 h-3.5 text-yellow-500/80" />
-                                        ) : (
-                                            <FileCode className="w-3.5 h-3.5 text-blue-400/80" />
-                                        )}
-                                        <span className="truncate">{file.name}</span>
                                     </div>
                                 ))}
-                                {repoFiles.length === 0 && !isLoadingFiles && (
-                                    <div className="text-center text-gray-600 py-10 text-xs italic">
-                                        Empty directory
-                                    </div>
-                                )}
                             </div>
-                        </div>
-
-                        {/* Editor View with Toolbar */}
-                        <div className="flex-1 bg-[#1e1e1e] flex flex-col overflow-hidden">
-                            {selectedFile ? (
-                                <>
-                                    {/* Tab Bar / Toolbar */}
-                                    <div className="h-10 border-b border-[#252526] bg-[#2d2d2d] flex items-center justify-between px-4 select-none">
-                                        {/* Tab */}
-                                        <div className="flex items-center gap-2 text-xs text-[#cccccc] font-medium bg-[#1e1e1e] h-full px-3 border-t-2 border-blue-500 min-w-[120px]">
-                                            <FileCode className="w-3.5 h-3.5 text-blue-400" />
-                                            {selectedFile.name}
-                                            {isEditing && <span className="w-2 h-2 rounded-full bg-white ml-2" />}
-                                        </div>
-
-                                        {/* Toolbar Actions */}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => setIsEditing(!isEditing)}
-                                                className={`p-1.5 rounded transition-colors ${isEditing ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
-                                                title={isEditing ? "View Mode" : "Edit Mode"}
+                        ) : (
+                            <div>
+                                <div className="mb-4">
+                                    <button onClick={() => setShowIngestModal(true)} className="w-full py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded flex items-center justify-center gap-2 text-xs font-bold text-gray-300">
+                                        <Cloud className="w-3 h-3" /> Ingest Repo
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    {repos.map(repo => (
+                                        <div key={repo.id} className="border border-gray-700 rounded-lg overflow-hidden">
+                                            <div
+                                                className="p-2 bg-gray-800/50 flex items-center gap-2 cursor-pointer hover:bg-gray-800"
+                                                onClick={() => {
+                                                    if (expandedRepo === repo.name) {
+                                                        setExpandedRepo(null);
+                                                    } else {
+                                                        setExpandedRepo(repo.name);
+                                                        fetchFiles(repo.name, "");
+                                                    }
+                                                }}
                                             >
-                                                {isEditing ? <Database className="w-4 h-4" /> : <RefreshCcw className="w-4 h-4 rotate-45" />}
-                                            </button>
-
-                                            {isEditing && (
-                                                <button
-                                                    onClick={saveCurrentFile}
-                                                    disabled={isSaving}
-                                                    className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-500 text-white text-xs rounded transition-colors disabled:opacity-50"
-                                                >
-                                                    <Save className="w-3 h-3" />
-                                                    {isSaving ? "Saving..." : "Save"}
-                                                </button>
+                                                {expandedRepo === repo.name ? <ArrowDown className="w-3 h-3 text-purple-400" /> : <ArrowRight className="w-3 h-3 text-gray-500" />}
+                                                <Database className="w-3 h-3 text-blue-400" />
+                                                <span className="text-xs font-bold truncate">{repo.name.replace("REPO: ", "")}</span>
+                                            </div>
+                                            {expandedRepo === repo.name && (
+                                                <div className="p-2 bg-[#0a0a0c] border-t border-gray-700">
+                                                    {isLoadingFiles ? (
+                                                        <div className="text-xs text-gray-500 animate-pulse">Loading file tree...</div>
+                                                    ) : (
+                                                        <div className="space-y-1 pl-2">
+                                                            {repoFiles.map((file, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="flex items-center gap-2 text-xs text-gray-400 hover:text-white cursor-pointer"
+                                                                    onClick={() => file.type === 'file' && fetchContent(repo.name, file.path)}
+                                                                >
+                                                                    {file.type === 'dir' ? <Folder className="w-3 h-3 text-yellow-600" /> : <FileCode className="w-3 h-3 text-blue-500" />}
+                                                                    {file.name}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    </div>
-
-                                    {/* Monaco Editor */}
-                                    <div className="flex-1 overflow-hidden relative">
-                                        <div className={`absolute inset-0 ${isEditing ? 'border-2 border-blue-900/30' : ''}`}>
-                                            <Editor
-                                                height="100%"
-                                                language={getLanguageFromPath(selectedFile.name)}
-                                                theme="vs-dark"
-                                                value={editorContent}
-                                                onChange={(val) => setEditorContent(val || "")}
-                                                options={{
-                                                    readOnly: !isEditing,
-                                                    minimap: { enabled: true },
-                                                    scrollBeyondLastLine: false,
-                                                    fontSize: 14,
-                                                    fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-                                                    padding: { top: 10 }
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex-1 flex flex-col items-center justify-center text-[#555] gap-4">
-                                    <div className="opacity-20 text-9xl font-sans font-bold">VS</div>
-                                    <p className="text-sm">Select a file from the explorer to view code.</p>
+                                    ))}
                                 </div>
-                            )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Ingest Modal */}
+            {showIngestModal && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="bg-[#1a1a20] border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg p-6">
+                        <h3 className="font-bold text-gray-200 mb-4">Ingest Repository</h3>
+                        <input
+                            type="text"
+                            className="w-full bg-[#0f0f13] border border-gray-600 rounded px-4 py-2 text-white mb-4"
+                            placeholder="https://github.com/..."
+                            value={ingestUrl}
+                            onChange={e => setIngestUrl(e.target.value)}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400">Cancel</button>
+                            <button onClick={handleIngestSubmit} className="px-4 py-2 bg-purple-600 text-white rounded">Start</button>
                         </div>
                     </div>
                 </div>

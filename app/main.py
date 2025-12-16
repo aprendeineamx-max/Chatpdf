@@ -11,9 +11,16 @@ app = FastAPI(
 )
 
 # CORS Middleware
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins, # Explicit origins for credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -88,43 +95,70 @@ class QueryRequest(BaseModel):
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
-    """
-    Query a processed PDF. Saves history asynchronously.
-    """
-    from app.services.rag.engine import rag_service
-    from app.services.chat.history import chat_history
-    
-    # 1. Manage Session
-    session_id = request.session_id
-    if not session_id:
-        # Create new session if none provided
-        session_id = chat_history.create_session(title=request.query_text[:30])
-    
-    # 2. Execute Logic
-    if request.mode == "swarm":
-        response = await rag_service.query_swarm(request.query_text, request.pdf_id)
-    else:
-        response = rag_service.query(request.query_text, request.pdf_id)
+    try:
+        from app.services.rag.engine import rag_service
+        from app.services.chat.history import chat_history
         
-    # 3. Save History (Async)
-    if isinstance(response, dict):
-        # We need the text answer and sources
-        answer_text = response.get("answer", "")
-        sources_list = response.get("sources", [])
+        # 1. Manage Session
+        session_id = request.session_id
+        if not session_id:
+            session_id = chat_history.create_session(title=request.query_text[:30])
         
-        background_tasks.add_task(
-            chat_history.save_interaction,
-            session_id,
-            request.query_text,
-            answer_text,
-            sources_list
-        )
+        # 2. Execute Logic
+        if request.mode == "swarm":
+            response = await rag_service.query_swarm(request.query_text, request.pdf_id)
+        else:
+            response = rag_service.query(request.query_text, request.pdf_id)
+            
+        # 3. Save History (Async)
+        if isinstance(response, dict):
+            answer_text = response.get("answer", "")
+            sources_list = response.get("sources", [])
+            
+            background_tasks.add_task(
+                chat_history.save_interaction,
+                session_id,
+                request.query_text,
+                answer_text,
+                sources_list
+            )
+    
+        # 4. Return result with Session ID
+        if isinstance(response, dict):
+            response["session_id"] = session_id
+            
+        return response
 
-    # 4. Return result with Session ID
-    if isinstance(response, dict):
-        response["session_id"] = session_id
-        
-    return response
+    except Exception as e:
+        import traceback
+        with open("error_log.txt", "w") as f:
+            f.write(traceback.format_exc())
+            f.write(f"\nError: {str(e)}")
+        print("CRITICAL ERROR LOGGED TO error_log.txt")
+        return {"answer": f"Backend Critical Error: {str(e)}", "sources": []}
+
+@app.post(f"{settings.API_V1_STR}/sessions")
+def create_session():
+    """Create a new empty session"""
+    from app.services.chat.history import chat_history
+    session_id = chat_history.create_session(title="New Conversation")
+    return {"session_id": session_id}
+
+@app.post(f"{settings.API_V1_STR}/sessions/{{session_id}}/clone")
+def clone_session_endpoint(session_id: str):
+    """Clone an existing session (Time Travel)"""
+    from app.services.chat.history import chat_history
+    new_session_id = chat_history.clone_session(session_id)
+    if not new_session_id:
+        return {"error": "Failed to clone session (not found or DB error)"}
+    return {"session_id": new_session_id, "status": "cloned"}
+
+@app.delete(f"{settings.API_V1_STR}/sessions/{{session_id}}")
+def delete_session_endpoint(session_id: str):
+    """Delete a session"""
+    from app.services.chat.history import chat_history
+    success = chat_history.delete_session(session_id)
+    return {"success": success}
 
 @app.get(f"{settings.API_V1_STR}/sessions")
 def get_sessions():

@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 99, in query_document
+    from app.services.rag.engine import rag_service
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\rag\engine.py", line 229
+    } for n in nodes[:5]]
+    ^
+SyntaxError: unmatched '}'
+
+Error: unmatched '}' (engine.py, line 229)
