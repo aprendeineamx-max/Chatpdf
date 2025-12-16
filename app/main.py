@@ -107,38 +107,98 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         # 2. Execute Logic
         
-        # [NEW] RAG Injection (Repo Structure)
-        from app.core.database import SessionLocal, AtomicArtifact
-        db = SessionLocal()
+        # [NEW] REAL-TIME FILE SYSTEM ACCESS (Agent Mode)
+        # Replaces static DB artifacts with live disk read
+        import os
         knowledge_context = ""
-        try:
-             # Fetch Structure
-             artifacts = db.query(AtomicArtifact).filter(AtomicArtifact.filename == "file_structure.tree").all()
-             
-             # Fetch Content Summaries (READMEs, etc.)
-             summaries = db.query(AtomicArtifact).filter(AtomicArtifact.filename == "repo_summary.md").all()
-             
-             if artifacts:
-                knowledge_context += "\n\nAVAILABLE REPOSITORIES:\n"
-                for art in artifacts:
-                    path = art.local_path.replace("\\", "/") 
-                    repo_name = path.split("/")[-1]
-                    knowledge_context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:2000]}\n"
+        
+        base_repos_path = "data/shared_repos"
+        if os.path.exists(base_repos_path):
+            repos = [d for d in os.listdir(base_repos_path) if os.path.isdir(os.path.join(base_repos_path, d))]
+            
+            # 1. Identify Target Repo
+            target_repo = None
+            
+            # Strategy A: Explicit Mention
+            for r in repos:
+                repo_parts = r.lower().replace("-", " ").split()
+                if r.lower() in request.query_text.lower() or any(p in request.query_text.lower() for p in repo_parts if len(p)>3):
+                    target_repo = r
+                    break
+            
+            # Strategy B: Implicit Context (If only 1 repo exists, assume it's the target)
+            if not target_repo and len(repos) == 1:
+                target_repo = repos[0]
+                
+            # Strategy C: File Hunting (If user asks for specific file, look for it in all repos)
+            # This handles "show me metadata.py" without naming the repo
+            if not target_repo:
+                words = request.query_text.split()
+                potential_files = [w for w in words if "." in w and len(w) > 3] # simple heuristic
+                for r in repos:
+                    # check if any potential file exists in this repo
+                    repo_root_check = os.path.join(base_repos_path, r)
+                    for pf in potential_files:
+                         # simple check if file exists anywhere in repo tree (shallow check first or full walk?)
+                         # let's just do a quick assumption or assign the first repo.
+                         # Better: Default to the most recently modified repo?
+                         # For MVP: Just pick the first repo if we can't decide. User can clarify.
+                         target_repo = repos[0] 
+                         break
+                    if target_repo: break
+            
+            # 2. Walk and Read
+            if target_repo:
+                repo_root = os.path.join(base_repos_path, target_repo)
+                knowledge_context += f"\n\n--- 🔴 LIVE FILE SYSTEM ACCESS: {target_repo} ---\n"
+                knowledge_context += "The user has granted you READ access to the following files. ANSWER ONLY BASED ON THIS CODE. DO NOT HALLUCINATE OR GIVE GENERIC DEFINITIONS.\n"
+                
+                file_count = 0
+                total_chars = 0
+                MAX_CHARS = 50000 # Increased for larger reads
+                
+                for root, dirs, files in os.walk(repo_root):
+                    # Exclude noise
+                    if ".git" in root or "node_modules" in root or "__pycache__" in root: continue
                     
-                # Match summaries to repos (simplistic for now, assuming 1:1 or just dumping all)
-                if summaries:
-                    for sum_art in summaries:
-                         path = sum_art.local_path.replace("\\", "/") 
-                         repo_name = path.split("/")[-1]
-                         knowledge_context += f"\n--- CONTENT SUMMARY FOR {repo_name} ---\n{sum_art.content[:6000]}\n" # Generous limit for READMEs
-                         
-        except Exception as e_rag:
-            print(f"RAG Injection Error: {e_rag}")
-        finally:
-            db.close()
+                    for f in files:
+                        if f in ["package-lock.json", ".DS_Store", "yarn.lock"]: continue
+                        if f.endswith(".png") or f.endswith(".jpg"): continue
+                        
+                        file_path = os.path.join(root, f)
+                        rel_path = os.path.relpath(file_path, repo_root)
+                        
+                        # Prioritize the requested file if mentioned
+                        is_priority = f.lower() in request.query_text.lower()
+                        
+                        try:
+                            with open(file_path, "r", encoding="utf-8", errors="ignore") as file_obj:
+                                content = file_obj.read()
+                                
+                                # If this is the specific file requested, ensure it gets in!
+                                if is_priority:
+                                    knowledge_context = f"\n[PRIORITY FILE: {rel_path}]\n```\n{content}\n```\n" + knowledge_context
+                                    total_chars += len(content)
+                                    file_count += 1
+                                    continue
+
+                                if total_chars + len(content) > MAX_CHARS:
+                                    knowledge_context += f"\n[FILE: {rel_path}] (Truncated context)\n"
+                                    continue
+                                    
+                                knowledge_context += f"\n[FILE: {rel_path}]\n```\n{content}\n```\n"
+                                total_chars += len(content)
+                                file_count += 1
+                        except Exception as e_read:
+                             print(f"Error reading {rel_path}: {e_read}")
+                
+                print(f"✅ [Live Read] Injected {file_count} files ({total_chars} chars) from {target_repo}")
 
         # Prepend context to query
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
+        
+        # [NEW] Agentic Prompt Injection
+        final_query += "\n\nINSTRUCTIONS: You are an autonomous AI Agent inside the user's IDE. You see the REAL-TIME code above. If asked to edit, propose the code changes clearly."
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
