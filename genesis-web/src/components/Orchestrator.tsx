@@ -78,7 +78,7 @@ export function Orchestrator() {
     const [currentPath, setCurrentPath] = useState<string>("");
     const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-    const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.1-70B-Instruct"); // [FIX] Defined here
+    const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct"); // [FIX] Valid Model
 
 
     // Editor State
@@ -436,10 +436,10 @@ export function Orchestrator() {
                         onChange={(e) => setSelectedModel(e.target.value)}
                         className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-gray-500 transition-colors"
                     >
-                        <option value="Meta-Llama-3.1-70B-Instruct">🦙 Llama 3.1 70B (SambaNova)</option>
-                        <option value="Meta-Llama-3.1-405B-Instruct">🧠 Llama 405B (SambaNova)</option>
+                        <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (SambaNova)</option>
+                        <option value="DeepSeek-R1-Distill-Llama-70B">🧠 DeepSeek R1 (SambaNova)</option>
                         <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
-                        <option value="gemini-1.5-flash">💎 Gemini 1.5 Flash</option>
+                        <option value="gemini-2.0-flash-exp">💎 Gemini 2.0 Flash</option>
                     </select>
 
                     {/* System Mode Toggle */}

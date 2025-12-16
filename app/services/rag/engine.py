@@ -53,12 +53,12 @@ if not SAFE_MODE:
             yield CompletionResponse(text="Streaming not supported in Safe Wrapper")
 
     class CustomSambaNova(CustomLLM):
-        context_window: int = 131072 # High context for Llama 3.1
+        context_window: int = 131072
         num_output: int = 4096
-        model_name: str = "Meta-Llama-3.1-70B-Instruct"
+        model_name: str = "Meta-Llama-3.3-70B-Instruct" # [UPDATE] 3.3 is Active
         api_key: str = None
         
-        def __init__(self, api_key: str, model_name: str = "Meta-Llama-3.1-70B-Instruct"):
+        def __init__(self, api_key: str, model_name: str = "Meta-Llama-3.3-70B-Instruct"):
             super().__init__()
             self.api_key = api_key
             self.model_name = model_name
@@ -115,15 +115,17 @@ if not SAFE_MODE:
                 logger.error(f"RAG Init Error: {e}")
                 
         def _get_llm(self, model_override: str = None):
-            # 1. SambaNova Strategy (Default or Explicit)
-            if model_override and "Llama" in model_override:
+            # 1. SambaNova Strategy (Llama or DeepSeek)
+            if model_override and ("Llama" in model_override or "DeepSeek" in model_override):
                 key = settings.SAMBANOVA_API_KEY
                 return CustomSambaNova(api_key=key, model_name=model_override)
             
             # 2. Google Fallback (If not SambaNova)
             # HARDCODED SUCCESS KEY (User Provided Index #1)
             active_key = "AIzaSyC4xyNQ6BcsXzckzIeUFdfvhjaXUtHkRK4"
-            return CustomGemini(model_name="gemini-1.5-flash", api_key=active_key)
+            # Use 2.0 Flash Exp as requested/verified
+            gemini_model = "models/gemini-2.0-flash-exp" 
+            return CustomGemini(model_name=gemini_model, api_key=active_key)
 
         def query(self, query_text: str, pdf_id: str, model: str = None):
             # Fallback direct generation if Index fails or no docs
