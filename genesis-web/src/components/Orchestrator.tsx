@@ -78,6 +78,8 @@ export function Orchestrator() {
     const [currentPath, setCurrentPath] = useState<string>("");
     const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.1-70B-Instruct"); // [FIX] Defined here
+
 
     // Editor State
     const [isEditing, setIsEditing] = useState(false);
@@ -315,7 +317,8 @@ export function Orchestrator() {
                     query_text: userMsg.content,
                     pdf_id: "all",
                     mode: systemMode === 'CLOUD' ? 'swarm' : 'standard',
-                    session_id: currentSessionId
+                    session_id: currentSessionId,
+                    model: selectedModel
                 }),
             });
 
@@ -426,6 +429,18 @@ export function Orchestrator() {
                         <RefreshCcw className="w-3.5 h-3.5" />
                         New Chat
                     </button>
+
+                    {/* Model Selector */}
+                    <select
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-gray-500 transition-colors"
+                    >
+                        <option value="Meta-Llama-3.1-70B-Instruct">🦙 Llama 3.1 70B (SambaNova)</option>
+                        <option value="Meta-Llama-3.1-405B-Instruct">🧠 Llama 405B (SambaNova)</option>
+                        <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
+                        <option value="gemini-1.5-flash">💎 Gemini 1.5 Flash</option>
+                    </select>
 
                     {/* System Mode Toggle */}
                     <div className="flex bg-black/40 p-1 rounded-lg border border-gray-800">

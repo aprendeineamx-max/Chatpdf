@@ -30,7 +30,7 @@ if not SAFE_MODE:
         api_key: str = None
         _model: Any = None
 
-        def __init__(self, api_key: str, model_name: str = "models/gemini-flash-latest"):
+        def __init__(self, api_key: str, model_name: str = "gemini-1.5-flash"):
             super().__init__()
             self.api_key = api_key
             self.model_name = model_name
@@ -47,10 +47,52 @@ if not SAFE_MODE:
                 return CompletionResponse(text=response.text)
             except Exception as e:
                 logger.error(f"Gemini Generation Error: {e}")
-                return CompletionResponse(text=f"Error AI: {str(e)}")
+                return CompletionResponse(text=f"Error AI: {str(e)} | Key: {self.api_key[:5]}... | Model: {self.model_name}")
         
         def stream_complete(self, prompt: str, **kwargs: Any):
             yield CompletionResponse(text="Streaming not supported in Safe Wrapper")
+
+    class CustomSambaNova(CustomLLM):
+        context_window: int = 131072 # High context for Llama 3.1
+        num_output: int = 4096
+        model_name: str = "Meta-Llama-3.1-70B-Instruct"
+        api_key: str = None
+        
+        def __init__(self, api_key: str, model_name: str = "Meta-Llama-3.1-70B-Instruct"):
+            super().__init__()
+            self.api_key = api_key
+            self.model_name = model_name
+
+        @property
+        def metadata(self) -> LLMMetadata:
+            return LLMMetadata(context_window=self.context_window, num_output=self.num_output, model_name=self.model_name)
+
+        def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+            import requests
+            url = "https://api.sambanova.ai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": self.model_name,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "top_p": 0.1
+            }
+            try:
+                response = requests.post(url, headers=headers, json=data, timeout=30)
+                if response.status_code == 200:
+                    text_resp = response.json()['choices'][0]['message']['content']
+                    return CompletionResponse(text=text_resp)
+                else:
+                    return CompletionResponse(text=f"SambaNova Error {response.status_code}: {response.text}")
+            except Exception as e:
+                logger.error(f"SambaNova Error: {e}")
+                return CompletionResponse(text=f"Error AI: {str(e)} | Key: {self.api_key[:5]}...")
+
+        def stream_complete(self, prompt: str, **kwargs: Any):
+             yield CompletionResponse(text="Streaming not supported in Safe Wrapper")
 
     class RAGService:
         def __init__(self):
@@ -72,21 +114,28 @@ if not SAFE_MODE:
             except Exception as e:
                 logger.error(f"RAG Init Error: {e}")
                 
-        def _get_llm(self):
-            active_key = key_manager.get_best_key()
-            return CustomGemini(model_name="models/gemini-flash-latest", api_key=active_key)
+        def _get_llm(self, model_override: str = None):
+            # 1. SambaNova Strategy (Default or Explicit)
+            if model_override and "Llama" in model_override:
+                key = settings.SAMBANOVA_API_KEY
+                return CustomSambaNova(api_key=key, model_name=model_override)
+            
+            # 2. Google Fallback (If not SambaNova)
+            # HARDCODED SUCCESS KEY (User Provided Index #1)
+            active_key = "AIzaSyC4xyNQ6BcsXzckzIeUFdfvhjaXUtHkRK4"
+            return CustomGemini(model_name="gemini-1.5-flash", api_key=active_key)
 
-        def query(self, query_text: str, pdf_id: str):
+        def query(self, query_text: str, pdf_id: str, model: str = None):
             # Fallback direct generation if Index fails or no docs
             try:
-                 llm = self._get_llm()
+                 llm = self._get_llm(model_override=model)
                  resp = llm.complete(f"Answer this user question based on your general knowledge (RAG Unavailable): {query_text}")
                  return {"answer": resp.text, "sources": []}
             except Exception as e:
                 return {"answer": f"RAG Error: {str(e)}", "sources": []}
 
-        async def query_swarm(self, query_text: str, pdf_id: str):
-             return self.query(query_text, pdf_id)
+        async def query_swarm(self, query_text: str, pdf_id: str, model: str = None):
+             return self.query(query_text, pdf_id, model=model)
 
     rag_service = RAGService()
 

@@ -89,9 +89,10 @@ from typing import Optional
 
 class QueryRequest(BaseModel):
     query_text: str
-    pdf_id: str
+    pdf_id: str = "all"
     mode: str = "standard" 
-    session_id: Optional[str] = None # [NEW] Persistence
+    session_id: Optional[str] = None # Persistence
+    model: Optional[str] = None # [NEW] Model Override
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
@@ -106,9 +107,9 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         # 2. Execute Logic
         if request.mode == "swarm":
-            response = await rag_service.query_swarm(request.query_text, request.pdf_id)
+            response = await rag_service.query_swarm(request.query_text, request.pdf_id, model=request.model)
         else:
-            response = rag_service.query(request.query_text, request.pdf_id)
+            response = rag_service.query(request.query_text, request.pdf_id, model=request.model)
             
         # 3. Save History (Async)
         if isinstance(response, dict):
