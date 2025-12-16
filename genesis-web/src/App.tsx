@@ -20,7 +20,7 @@ function App() {
 
         const channel = supabase
             .channel('schema-db-changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'atomic_contexts' }, (payload) => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'atomic_contexts' }, (payload: any) => {
                 console.log('New Context:', payload);
                 fetchContexts();
             })
@@ -33,6 +33,7 @@ function App() {
     }, [selectedContext]);
 
     async function fetchContexts() {
+        // Safe access to supabase mock
         const { data, error } = await supabase
             .from('atomic_contexts')
             .select('*')
@@ -61,47 +62,59 @@ function App() {
     return (
         <div className="flex h-screen bg-[#0f0f13] text-gray-100 font-sans overflow-hidden">
             {/* Sidebar / Timeline */}
-            <div className="w-72 border-r border-gray-800 flex flex-col">
-                <div className="p-4 border-b border-gray-800 bg-[#16161a]">
+            <div className="w-20 lg:w-72 border-r border-gray-800 flex flex-col transition-all duration-300 ease-in-out">
+                <div className="p-4 border-b border-gray-800 bg-[#16161a] flex justify-center lg:justify-start">
                     <h1 className="text-lg font-bold flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                        <Cpu className="w-5 h-5 text-cyan-400" />
-                        GENESIS ARCHITECT
+                        <Cpu className="w-6 h-6 lg:w-5 lg:h-5 text-cyan-400" />
+                        <span className="hidden lg:inline">GENESIS ARCHITECT</span>
                     </h1>
-                    <div className="flex gap-2 mt-4">
-                        <button
-                            onClick={() => setView('timeline')}
-                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'timeline' ? 'bg-cyan-900 text-cyan-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
-                        >
-                            TIMELINE
-                        </button>
-                        <button
-                            onClick={() => setView('skills')}
-                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'skills' ? 'bg-purple-900 text-purple-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
-                        >
-                            SKILLS
-                        </button>
-                        <button
-                            onClick={() => setView('self-healing')}
-                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'self-healing' ? 'bg-emerald-900 text-emerald-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
-                        >
-                            HEALING
-                        </button>
-                        <button
-                            onClick={() => setView('hive')}
-                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'hive' ? 'bg-amber-900 text-amber-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
-                        >
-                            HIVE
-                        </button>
-                        <button
-                            onClick={() => setView('orchestrator')}
-                            className={`flex-1 text-xs font-bold py-1.5 rounded transition-all ${view === 'orchestrator' ? 'bg-indigo-900 text-indigo-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
-                        >
-                            ARCH
-                        </button>
-                    </div>
                 </div>
+                <div className="flex flex-col gap-2 mt-4 px-2">
+                    <button
+                        onClick={() => setView('timeline')}
+                        className={`flex items-center justify-center lg:justify-start gap-3 w-full text-xs font-bold py-2 lg:px-4 rounded transition-all ${view === 'timeline' ? 'bg-cyan-900 text-cyan-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        title="Timeline"
+                    >
+                        <Clock className="w-5 h-5 flex-shrink-0" />
+                        <span className="hidden lg:inline">TIMELINE</span>
+                    </button>
+                    <button
+                        onClick={() => setView('skills')}
+                        className={`flex items-center justify-center lg:justify-start gap-3 w-full text-xs font-bold py-2 lg:px-4 rounded transition-all ${view === 'skills' ? 'bg-purple-900 text-purple-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        title="Skill Galaxy"
+                    >
+                        <Activity className="w-5 h-5 flex-shrink-0" />
+                        <span className="hidden lg:inline">SKILLS</span>
+                    </button>
+                    <button
+                        onClick={() => setView('self-healing')}
+                        className={`flex items-center justify-center lg:justify-start gap-3 w-full text-xs font-bold py-2 lg:px-4 rounded transition-all ${view === 'self-healing' ? 'bg-emerald-900 text-emerald-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        title="Self Healing"
+                    >
+                        <Activity className="w-5 h-5 flex-shrink-0 text-emerald-500" />
+                        <span className="hidden lg:inline">HEALING</span>
+                    </button>
+                    <button
+                        onClick={() => setView('hive')}
+                        className={`flex items-center justify-center lg:justify-start gap-3 w-full text-xs font-bold py-2 lg:px-4 rounded transition-all ${view === 'hive' ? 'bg-amber-900 text-amber-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        title="Hive Mind"
+                    >
+                        <Users className="w-5 h-5 flex-shrink-0" />
+                        <span className="hidden lg:inline">HIVE</span>
+                    </button>
+                    <button
+                        onClick={() => setView('orchestrator')}
+                        className={`flex items-center justify-center lg:justify-start gap-3 w-full text-xs font-bold py-2 lg:px-4 rounded transition-all ${view === 'orchestrator' ? 'bg-indigo-900 text-indigo-200' : 'bg-[#202026] text-gray-500 hover:text-gray-300'}`}
+                        title="Supreme Architect"
+                    >
+                        <Cpu className="w-5 h-5 flex-shrink-0 text-indigo-400" />
+                        <span className="hidden lg:inline">ARCH</span>
+                    </button>
+                </div>
+            </div>
 
-                {view === 'timeline' && (
+            {
+                view === 'timeline' && (
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">Neural Timeline</h2>
                         {loading ? (
@@ -127,9 +140,8 @@ function App() {
                             </div>
                         ))}
                     </div>
-                )}
-            </div>
-
+                )
+            }
             {/* Main Content */}
             <div className="flex-1 flex flex-col bg-[#0f0f13]">
                 {view === 'skills' ? (
