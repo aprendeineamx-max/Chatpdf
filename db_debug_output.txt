@@ -1,0 +1,32 @@
+--- DB STATE CHECK ---
+- ID: 1400092b-91cd-409e-afee-f56f2be61368
+  Name: REPO: crawlbase-mcp
+  Scope: global
+  Session: None
+
+- ID: a66f505f-6f8c-41f1-a5c0-7cae53098e43
+  Name: REPO: crawlbase-node
+  Scope: global
+  Session: None
+
+- ID: ef4782e4-5463-4f00-b1c4-e4c8c8de2231
+  Name: REPO: Hello-World
+  Scope: session
+  Session: None
+
+- ID: da5434fe-fa65-4f1b-80ec-072fb06acf63
+  Name: REPO: Spoon-Knife
+  Scope: session
+  Session: None
+
+- ID: 6ca33373-8587-476c-9586-4516d630bd9b
+  Name: REPO: Spam-phone-number
+  Scope: session
+  Session: 4b4aafbb-7b54-4a71-831a-f153a23c24c8
+
+- ID: 55993816-bf30-4956-aba3-840f90bc792f
+  Name: REPO: Proxy-Tools
+  Scope: session
+  Session: None
+
+✅ Proxy-Tools IS present.

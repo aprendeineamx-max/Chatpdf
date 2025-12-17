@@ -22,17 +22,23 @@ async def ingest_repository(req: RepoRequest, background_tasks: BackgroundTasks)
     # Simple validation
     if not req.url.startswith("http"):
         raise HTTPException(status_code=400, detail="Invalid URL")
+        
+    # [FIX] If session-scoped but no session_id (fresh chat), generate one.
+    final_session_id = req.session_id
+    if req.scope == "session" and not final_session_id:
+        final_session_id = str(uuid.uuid4())
     
     job_id = str(uuid.uuid4())
         
     # Run in background to avoid blocking
-    background_tasks.add_task(repo_ingestor.ingest_repo, req.url, job_id, req.scope, req.session_id)
+    background_tasks.add_task(repo_ingestor.ingest_repo, req.url, job_id, req.scope, final_session_id)
     
     return {
         "status": "started", 
         "message": f"Ingestion started.",
         "job_id": job_id,
-        "repo_url": req.url
+        "repo_url": req.url,
+        "session_id": final_session_id # Return the ID so frontend can adopt it
     }
 
 @router.get("/list")

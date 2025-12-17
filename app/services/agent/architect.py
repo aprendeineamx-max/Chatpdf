@@ -52,18 +52,39 @@ class SupremeArchitect:
         """Gather knowledge from RAG, Roadmap, and Session History."""
         context = ""
 
-        # A. Repo Structure (RAG)
-        artifacts = db.query(AtomicArtifact).filter(AtomicArtifact.filename == "file_structure.tree").all()
-        self._log(f"Found {len(artifacts)} repo structure artifacts.\n")
+        # A. Repo Structure (RAG) - FIXED SCOPING
+        from app.core.database import AtomicContext
         
-        if artifacts:
-            context += "\n\nAVAILABLE REPOSITORIES:\n"
-            for art in artifacts:
-                # Robust path handling
-                path = art.local_path.replace("\\", "/") 
-                repo_name = path.split("/")[-1]
-                self._log(f"Injecting structure for {repo_name}\n")
-                context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:4000]}\n"
+        # 1. Find relevant Context IDs (Session Specific OR Global)
+        # We need to join Artifact -> Context to check scope, but AtomicArtifact has context_id.
+        # Let's verify commonly accessible contexts first.
+        
+        # Get contexts that are GLOBAL or belong to this SESSION
+        valid_contexts = db.query(AtomicContext).filter(
+            (AtomicContext.id == session_id) | (AtomicContext.scope == "global")
+        ).all()
+        
+        valid_context_ids = [c.id for c in valid_contexts]
+        
+        if not valid_context_ids:
+            self._log("No valid contexts found for structure injection.\n")
+        else:
+            # 2. Fetch artifacts only for these contexts
+            artifacts = db.query(AtomicArtifact).filter(
+                AtomicArtifact.filename == "file_structure.tree",
+                AtomicArtifact.context_id.in_(valid_context_ids)
+            ).all()
+
+            self._log(f"Found {len(artifacts)} repo structure artifacts for session {session_id}.\n")
+            
+            if artifacts:
+                context += "\n\nAVAILABLE REPOSITORIES:\n"
+                for art in artifacts:
+                    # Robust path handling
+                    path = art.local_path.replace("\\", "/") 
+                    repo_name = path.split("/")[-1]
+                    self._log(f"Injecting structure for {repo_name}\n")
+                    context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:4000]}\n"
 
         # B. Session Roadmap
         existing_tasks = db.query(OrchestratorTask).filter(OrchestratorTask.session_id == session_id).all()

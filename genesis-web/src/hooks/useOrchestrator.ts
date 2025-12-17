@@ -261,7 +261,15 @@ export function useOrchestrator() {
             });
 
             if (res.ok) {
+                const data = await res.json();
                 setMessages(prev => [...prev, { role: 'system', content: `✅ INGESTION QUEUED.` }]);
+
+                // [FIX] Adopt session ID if we were in a new/null session
+                if (data.session_id && data.session_id !== currentSessionId) {
+                    setCurrentSessionId(data.session_id);
+                    loadSessions(); // Refresh session list
+                }
+
                 loadData(true);
             } else {
                 throw new Error("Ingestion failed");
