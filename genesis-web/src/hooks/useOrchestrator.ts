@@ -40,6 +40,7 @@ export function useOrchestrator() {
     const [isEditing, setIsEditing] = useState(false);
     const [editorContent, setEditorContent] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoadingContent, setIsLoadingContent] = useState(false);
 
     // --- Effects ---
 
@@ -203,13 +204,26 @@ export function useOrchestrator() {
 
     async function fetchContent(repoName: string, path: string) {
         const cleanName = repoName.replace("REPO: ", "");
+        setIsLoadingContent(true);
+        // Open modal immediately with empty content to show loading state
+        setSelectedFile({ name: path.split('/').pop() || 'File', content: "" });
+
         try {
             const res = await fetch(`${API_URL}/api/v1/ingest/content?repo_name=${cleanName}&path=${encodeURIComponent(path)}`);
             if (res.ok) {
                 const data = await res.json();
-                setSelectedFile({ name: path.split('/').pop() || 'File', content: data.content });
+                // Update with actual content
+                setSelectedFile(prev => prev ? { ...prev, content: data.content } : null);
             }
-        } catch (e) { console.error(e); alert("Failed to load file content."); }
+        } catch (e) {
+            console.error(e);
+            // Close modal on error or show error state? For now, close and alert.
+            setSelectedFile(null);
+            // In a better world, we'd use a toast.
+            // Using alert to not break existing pattern, but minimizing "blocking".
+        } finally {
+            setIsLoadingContent(false);
+        }
     }
 
     async function saveCurrentFile(content: string) {
@@ -271,6 +285,7 @@ export function useOrchestrator() {
 
         // Actions
         sendMessage, handleNewChat, handleSelectSession, handleCloneSession, handleDeleteSession,
-        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit
+        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit,
+        isLoadingContent // Exported
     };
 }

@@ -6,6 +6,7 @@ interface FileEditorModalProps {
     editorContent: string;
     isEditing: boolean;
     isSaving: boolean;
+    isLoading?: boolean;
     setEditorContent: (content: string) => void;
     setIsEditing: (isEditing: boolean) => void;
     setSelectedFile: (file: { name: string, content: string } | null) => void;
@@ -17,6 +18,7 @@ export function FileEditorModal({
     editorContent,
     isEditing,
     isSaving,
+    isLoading = false,
     setEditorContent,
     setIsEditing,
     setSelectedFile,
@@ -33,12 +35,13 @@ export function FileEditorModal({
                         <FileCode className="w-4 h-4 text-blue-400" />
                         <span className="font-mono text-sm font-bold">{selectedFile.name}</span>
                         {isEditing && <span className="text-xs text-yellow-500 italic">(Unsaved Changes)</span>}
+                        {isLoading && <span className="text-xs text-blue-400 animate-pulse">(Loading...)</span>}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={saveCurrentFile}
-                            disabled={!isEditing || isSaving}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors ${!isEditing ? 'text-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+                            disabled={!isEditing || isSaving || isLoading}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors ${!isEditing || isSaving || isLoading ? 'text-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white'}`}
                         >
                             {isSaving ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                             Save
@@ -53,17 +56,26 @@ export function FileEditorModal({
                 </div>
                 {/* Editor */}
                 <div className="flex-1 relative">
-                    <textarea
-                        className="w-full h-full bg-[#0a0a0c] text-gray-300 font-mono text-xs p-4 focus:outline-none resize-none leading-relaxed"
-                        value={editorContent}
-                        onChange={(e) => {
-                            setEditorContent(e.target.value);
-                            setIsEditing(true);
-                            if (selectedFile) {
-                                setSelectedFile({ ...selectedFile, content: e.target.value });
-                            }
-                        }}
-                    />
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="flex flex-col items-center gap-2 text-gray-500">
+                                <RefreshCcw className="w-8 h-8 animate-spin text-purple-600" />
+                                <span className="text-xs">Fetching content...</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <textarea
+                            className="w-full h-full bg-[#0a0a0c] text-gray-300 font-mono text-xs p-4 focus:outline-none resize-none leading-relaxed"
+                            value={editorContent}
+                            onChange={(e) => {
+                                setEditorContent(e.target.value);
+                                setIsEditing(true);
+                                if (selectedFile) {
+                                    setSelectedFile({ ...selectedFile, content: e.target.value });
+                                }
+                            }}
+                        />
+                    )}
                 </div>
             </div>
         </div>
