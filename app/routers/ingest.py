@@ -82,6 +82,13 @@ def list_ingested_repos(session_id: Optional[str] = None):
         # It's better to show the Job status for a bit.
         
         status = job["status"]
+        
+        job_scope = job.get("scope", "global")
+        job_sid = job.get("session_id")
+
+        if job_scope == "session" and job_sid != session_id:
+            continue
+            
         if status == "COMPLETED" and any(c["name"] == f"REPO: {job['repo'].split('/')[-1].replace('.git','')}" for c in completed):
              continue # Already in DB list
              
@@ -90,7 +97,8 @@ def list_ingested_repos(session_id: Optional[str] = None):
             "name": f"REPO: {job['repo'].split('/')[-1]}",
             "timestamp": job["start_time"],
             "status": status,
-            "error": job.get("error")
+            "error": job.get("error"),
+            "scope": job_scope
         })
 
     # Sort by timestamp desc

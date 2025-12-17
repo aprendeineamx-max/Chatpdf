@@ -32,8 +32,9 @@ class SmartKeyManager:
             self.providers["openrouter"] = [{"key": settings.OPENROUTER_API_KEY, "active": True, "errors": 0}]
 
         # SambaNova
-        if settings.SAMBANOVA_API_KEY:
-            self.providers["sambanova"] = [{"key": settings.SAMBANOVA_API_KEY, "active": True, "errors": 0}]
+        # SambaNova
+        sn_keys = [k for k in [settings.SAMBANOVA_API_KEY, settings.SAMBANOVA_API_KEY_2] if k]
+        self.providers["sambanova"] = [{"key": k, "active": True, "errors": 0} for k in set(sn_keys)]
             
         logger.info(f"SmartKeyManager Loaded: {len(self.providers['google'])} Google, {len(self.providers['groq'])} Groq, {len(self.providers['openrouter'])} OpenRouter, {len(self.providers['sambanova'])} SambaNova.")
 

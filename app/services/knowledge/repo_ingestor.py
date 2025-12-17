@@ -26,7 +26,9 @@ class RepoIngestor:
         self.JOBS[job_id] = {
             "status": "CLONING",
             "repo": repo_url,
-            "start_time": datetime.utcnow().isoformat()
+            "start_time": datetime.utcnow().isoformat(),
+            "scope": scope,
+            "session_id": session_id
         }
 
         repo_name = repo_url.split("/")[-1].replace(".git", "")

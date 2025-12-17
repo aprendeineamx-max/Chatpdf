@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     
     OPENROUTER_API_KEY: Optional[str] = None
     SAMBANOVA_API_KEY: Optional[str] = None
+    SAMBANOVA_API_KEY_2: Optional[str] = None
     
     # Shared Providers
     BROWSER_USE_API_KEY: Optional[str] = None
