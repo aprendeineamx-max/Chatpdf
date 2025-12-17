@@ -311,6 +311,42 @@ export function useOrchestrator() {
         }
     }
 
+    async function handleIngestPDF() {
+        const url = ingestUrl.trim();
+        if (!url) return;
+        setShowIngestModal(false);
+        setIngestUrl('');
+        setActiveTab('knowledge');
+        setMessages(prev => [...prev, { role: 'system', content: `📄 PDF INGESTION INITIATED: ${url}` }]);
+
+        try {
+            const res = await fetch(`${API_URL}/api/v1/ingest/pdf`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, scope: ingestScope, session_id: currentSessionId })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(prev => [...prev, { role: 'system', content: `✅ PDF INGESTION QUEUED.` }]);
+
+                // Adopt session ID if needed (same pattern as repos)
+                let effectiveSessionId = currentSessionId;
+                if (data.session_id && data.session_id !== currentSessionId) {
+                    setCurrentSessionId(data.session_id);
+                    effectiveSessionId = data.session_id;
+                    loadSessions();
+                }
+
+                loadData(true, effectiveSessionId);
+            } else {
+                throw new Error("PDF Ingestion failed");
+            }
+        } catch (e: any) {
+            setMessages(prev => [...prev, { role: 'system', content: `❌ PDF INGESTION FAILED: ${e.message}` }]);
+        }
+    }
+
     return {
         // State
         tasks, messages, input, setInput, loading, isPolling,
@@ -325,7 +361,7 @@ export function useOrchestrator() {
 
         // Actions
         sendMessage, handleNewChat, handleSelectSession, handleCloneSession, handleDeleteSession,
-        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit,
+        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF,
         isLoadingContent // Exported
     };
 }

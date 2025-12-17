@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Github, FileText } from 'lucide-react';
 
 interface IngestModalProps {
     showIngestModal: boolean;
@@ -8,7 +9,10 @@ interface IngestModalProps {
     ingestScope: 'global' | 'session';
     setIngestScope: (scope: 'global' | 'session') => void;
     handleIngestSubmit: () => void;
+    handleIngestPDF?: () => void; // New handler for PDFs
 }
+
+type SourceType = 'repo' | 'pdf';
 
 export function IngestModal({
     showIngestModal,
@@ -17,21 +21,65 @@ export function IngestModal({
     setIngestUrl,
     ingestScope,
     setIngestScope,
-    handleIngestSubmit
+    handleIngestSubmit,
+    handleIngestPDF
 }: IngestModalProps) {
+    const [sourceType, setSourceType] = useState<SourceType>('repo');
+
     if (!showIngestModal) return null;
+
+    const handleSubmit = () => {
+        if (sourceType === 'pdf' && handleIngestPDF) {
+            handleIngestPDF();
+        } else {
+            handleIngestSubmit();
+        }
+    };
 
     return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="bg-[#1a1a20] border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg p-6">
-                <h3 className="font-bold text-gray-200 mb-4">Ingest Repository</h3>
+                <h3 className="font-bold text-gray-200 mb-4">Ingest Knowledge Source</h3>
+
+                {/* Source Type Tabs */}
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={() => setSourceType('repo')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'repo'
+                                ? 'bg-purple-900/40 border-purple-500 text-purple-300'
+                                : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
+                    >
+                        <Github size={18} />
+                        <span className="font-medium">GitHub Repo</span>
+                    </button>
+                    <button
+                        onClick={() => setSourceType('pdf')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'pdf'
+                                ? 'bg-red-900/40 border-red-500 text-red-300'
+                                : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
+                    >
+                        <FileText size={18} />
+                        <span className="font-medium">PDF URL</span>
+                    </button>
+                </div>
+
+                {/* Input Field */}
                 <input
                     type="text"
-                    className="w-full bg-[#0f0f13] border border-gray-600 rounded px-4 py-2 text-white mb-4"
-                    placeholder="https://github.com/..."
+                    className="w-full bg-[#0f0f13] border border-gray-600 rounded px-4 py-2 text-white mb-2"
+                    placeholder={sourceType === 'repo' ? "https://github.com/user/repo" : "https://example.com/document.pdf"}
                     value={ingestUrl}
                     onChange={e => setIngestUrl(e.target.value)}
                 />
+
+                {/* Hint Text */}
+                <p className="text-xs text-gray-500 mb-4">
+                    {sourceType === 'repo'
+                        ? "Paste a public GitHub repository URL"
+                        : "Paste a direct PDF link, Google Drive, or Dropbox URL"}
+                </p>
 
                 {/* Scope Selector */}
                 <div className="flex gap-4 mb-6">
@@ -47,9 +95,15 @@ export function IngestModal({
                         <div className="text-[10px] text-gray-400">Only visible in THIS conversation.</div>
                     </label>
                 </div>
+
                 <div className="flex justify-end gap-2">
                     <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400">Cancel</button>
-                    <button onClick={handleIngestSubmit} className="px-4 py-2 bg-purple-600 text-white rounded">Start</button>
+                    <button
+                        onClick={handleSubmit}
+                        className={`px-4 py-2 text-white rounded ${sourceType === 'repo' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-red-600 hover:bg-red-700'}`}
+                    >
+                        Start Ingestion
+                    </button>
                 </div>
             </div>
         </div>

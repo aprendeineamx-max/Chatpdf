@@ -4,12 +4,18 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.services.knowledge.repo_ingestor import repo_ingestor
+from app.services.knowledge.pdf_ingestor import pdf_ingestor
 
 router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
 
 class RepoRequest(BaseModel):
     url: str
     scope: str = "global" # 'global' or 'session'
+    session_id: Optional[str] = None
+
+class PDFRequest(BaseModel):
+    url: str
+    scope: str = "global"
     session_id: Optional[str] = None
 
 
@@ -41,20 +47,56 @@ async def ingest_repository(req: RepoRequest, background_tasks: BackgroundTasks)
         "session_id": final_session_id # Return the ID so frontend can adopt it
     }
 
+
+@router.post("/pdf")
+async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
+    """
+    Triggers a background download & process for a PDF URL.
+    Supports: Direct links, Google Drive, Dropbox.
+    """
+    import uuid
+    
+    if not req.url.startswith("http"):
+        raise HTTPException(status_code=400, detail="Invalid URL")
+    
+    # Generate session ID if needed (same pattern as /repo)
+    final_session_id = req.session_id
+    if req.scope == "session" and not final_session_id:
+        final_session_id = str(uuid.uuid4())
+    
+    job_id = str(uuid.uuid4())
+    
+    # Run in background
+    background_tasks.add_task(pdf_ingestor.ingest_pdf_url, req.url, job_id, req.scope, final_session_id)
+    
+    return {
+        "status": "started",
+        "message": "PDF ingestion started.",
+        "job_id": job_id,
+        "pdf_url": req.url,
+        "session_id": final_session_id
+    }
+
+
 @router.get("/list")
 def list_ingested_repos(session_id: Optional[str] = None):
     """
-    Lists all ingested repositories (AtomicContexts) AND active jobs.
+    Lists all ingested knowledge sources (Repos AND PDFs) AND active jobs.
     """
     from app.core.database import SessionLocal, AtomicContext
+    from sqlalchemy import or_
     
     # 1. Get Completed from DB
     db = SessionLocal()
     completed = []
     try:
-        # Filter: Scope 'global' OR Scope 'session' matches current session
-        query = db.query(AtomicContext).filter(AtomicContext.batch_id == "REPO_INGESTION")
-        contexts = query.all()
+        # Filter: batch_id for repos OR pdf- prefix contexts
+        contexts = db.query(AtomicContext).filter(
+            or_(
+                AtomicContext.batch_id == "REPO_INGESTION",
+                AtomicContext.batch_id.like("pdf-%")
+            )
+        ).all()
         
         # In-memory filter for complex OR logic (SQLite/SQLAlchemy simple fallback)
         filtered_contexts = []
@@ -101,6 +143,29 @@ def list_ingested_repos(session_id: Optional[str] = None):
         active_list.append({
             "id": jid,
             "name": f"REPO: {job['repo'].split('/')[-1]}",
+            "timestamp": job["start_time"],
+            "status": status,
+            "error": job.get("error"),
+            "scope": job_scope
+        })
+
+    # 3. Get Active/Failed PDF Jobs
+    pdf_jobs = pdf_ingestor.get_active_jobs()
+    for jid, job in pdf_jobs.items():
+        status = job["status"]
+        job_scope = job.get("scope", "global")
+        job_sid = job.get("session_id")
+        
+        if job_scope == "session" and job_sid != session_id:
+            continue
+        
+        # Extract name from URL
+        url = job.get("url", "")
+        pdf_name = url.split("/")[-1].split("?")[0] if "/" in url else "PDF"
+        
+        active_list.append({
+            "id": jid,
+            "name": f"PDF: {pdf_name}",
             "timestamp": job["start_time"],
             "status": status,
             "error": job.get("error"),
