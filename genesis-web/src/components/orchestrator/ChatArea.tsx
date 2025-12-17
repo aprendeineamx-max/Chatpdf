@@ -34,7 +34,7 @@ export function ChatArea({
     }, [messages]);
 
     return (
-        <div className={`flex-1 flex flex-col min-w-0 border-r border-gray-800 ${activeTab === 'roadmap' ? 'block' : 'hidden md:block'}`}>
+        <div className={`flex-1 flex flex-col min-w-0 border-r border-gray-800 ${activeTab === 'roadmap' ? 'flex' : 'hidden md:flex'}`}>
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
                 {messages.map((msg, i) => {
