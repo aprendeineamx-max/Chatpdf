@@ -60,9 +60,17 @@ class SupremeArchitect:
         # Let's verify commonly accessible contexts first.
         
         # Get contexts that are GLOBAL or belong to this SESSION
+        # Note: For repos/PDFs, the AtomicContext.session_id matches the chat session_id
+        # But AtomicContext.id is a unique UUID for each ingested item
         valid_contexts = db.query(AtomicContext).filter(
-            (AtomicContext.id == session_id) | (AtomicContext.scope == "global")
+            (AtomicContext.session_id == session_id) | (AtomicContext.scope == "global")
         ).all()
+        
+        # DEBUG: Log what we found
+        self._log(f"[DEBUG] session_id passed: {session_id}\n")
+        self._log(f"[DEBUG] Found {len(valid_contexts)} valid contexts:\n")
+        for c in valid_contexts[:5]:  # Show first 5
+            self._log(f"  - {c.folder_name[:30]}, scope={c.scope}, ctx.session_id={c.session_id}\n")
         
         valid_context_ids = [c.id for c in valid_contexts]
         

@@ -114,6 +114,35 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         knowledge_context, target_repo = realtime_knowledge.get_file_context(request.query_text, request.repo_context)
         
+        # [NEW] PDF CONTEXT INJECTION
+        # Query PDF artifacts for this session or global scope
+        from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
+        db = SessionLocal()
+        try:
+            # Find contexts for this session or global
+            valid_contexts = db.query(AtomicContext).filter(
+                (AtomicContext.session_id == session_id) | (AtomicContext.scope == "global")
+            ).all()
+            valid_context_ids = [c.id for c in valid_contexts]
+            
+            if valid_context_ids:
+                # Fetch PDF artifacts
+                pdf_artifacts = db.query(AtomicArtifact).filter(
+                    AtomicArtifact.filename.in_(["pdf_content.txt", "pdf_summary.txt"]),
+                    AtomicArtifact.context_id.in_(valid_context_ids)
+                ).all()
+                
+                if pdf_artifacts:
+                    knowledge_context += "\n\n=== INGESTED PDF DOCUMENTS ===\n"
+                    for art in pdf_artifacts:
+                        if art.filename == "pdf_summary.txt":
+                            knowledge_context += f"--- PDF SUMMARY ---\n{art.content}\n\n"
+                        elif art.filename == "pdf_content.txt":
+                            # Inject first 10000 chars to give good context
+                            knowledge_context += f"--- PDF CONTENT (Excerpt, {len(art.content)} chars total) ---\n{art.content[:10000]}\n\n"
+        finally:
+            db.close()
+        
         # Prepend context to query
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
         

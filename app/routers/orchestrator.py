@@ -19,6 +19,7 @@ hive_mind = HiveMind()
 class MessageCreate(BaseModel):
     content: str
     role: str = "user"
+    session_id: Optional[str] = None  # [FIX] Accept session_id from frontend
     provider: Optional[str] = None
 
 class TaskResponse(BaseModel):
@@ -46,7 +47,8 @@ def get_chat_history(db: Session = Depends(get_db)):
 async def send_message(msg: MessageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if settings.CORE_MODE == "LOCAL":
         # 1. Save User Msg
-        session_id = "default-session" # simplified for single user
+        # [FIX] Use session_id from frontend, fallback to default
+        session_id = msg.session_id if msg.session_id else "default-session"
         
         # Check if session exists
         sess = db.query(ChatSession).filter(ChatSession.id == session_id).first()
