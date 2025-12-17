@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { User, Bot, Brain, Send } from 'lucide-react';
 
 interface Message {
