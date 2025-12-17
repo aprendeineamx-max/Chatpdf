@@ -18,3 +18,4 @@ dist/
 # Database
 data/db/*.db
 data/indices/
+data/shared_repos/Karaoke-Lyric
