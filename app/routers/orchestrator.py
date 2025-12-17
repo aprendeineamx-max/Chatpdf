@@ -64,7 +64,8 @@ async def send_message(msg: MessageCreate, background_tasks: BackgroundTasks, db
         db.commit()
         
         # 2. Trigger Response (Background)
-        background_tasks.add_task(generate_response_local, msg.content, session_id, db)
+        # Note: We don't pass 'db' here, the wrapper creates its own SessionLocal
+        background_tasks.add_task(generate_response_local_wrapper, msg.content, session_id)
         
         return {"status": "sent", "id": user_msg.id}
     else:
@@ -85,103 +86,33 @@ def get_tasks(session_id: Optional[str] = None, db: Session = Depends(get_db)):
 # --- BACKGROUND WORKER ---
 
 async def generate_response_local(user_text: str, session_id: str, db: Session):
-    debug_path = r"C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\debug_rag_context.txt"
     try:
-        with open(debug_path, "a", encoding="utf-8") as f:
-            f.write(f"\n\n--- NEW REQUEST: {user_text} ---\n")
-            
-        from app.core.database import SessionLocal, AtomicArtifact
-        from app.services.chat.history import history_service
-        local_db = SessionLocal()
+        from app.services.agent.architect import architect
         
-        print(f"🧠 [Local] Thinking about: {user_text}")
-        
-        # 1. RAG Retrieval (Simple Injection of Repo Summaries)
-        artifacts = local_db.query(AtomicArtifact).filter(AtomicArtifact.filename == "file_structure.tree").all()
-        
-        with open(debug_path, "a", encoding="utf-8") as f:
-            f.write(f"Found {len(artifacts)} artifacts.\n")
-
-        knowledge_context = ""
-        if artifacts:
-            knowledge_context += "\n\nAVAILABLE REPOSITORIES:\n"
-            for art in artifacts:
-                # Robust path handling for Windows/Linux strings
-                path = art.local_path.replace("\\", "/") # Normalize to forward slashes
-                repo_name = path.split("/")[-1]
-                
-                with open(debug_path, "a", encoding="utf-8") as f:
-                     f.write(f"Injecting {repo_name}\n")
-                
-                knowledge_context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:4000]}\n" # Increased limit
-
-        # Also try to fetch summaries if query mentions "repo" or "code"
-        if "repo" in user_text.lower() or "code" in user_text.lower() or "access" in user_text.lower():
-             pass
-
-        # [NEW] Inject Session Roadmap
-        existing_tasks = local_db.query(OrchestratorTask).filter(OrchestratorTask.session_id == session_id).all()
-        if existing_tasks:
-            task_list_str = "\n".join([f"- [{t.status}] {t.title}" for t in existing_tasks])
-            knowledge_context += f"\nCURRENT ROADMAP (Use this context):\n{task_list_str}\n"
-
-        context = f"User: {user_text}\nRole: Supreme Architect. Guide the user.\n{knowledge_context}"
-        
-        with open(debug_path, "a", encoding="utf-8") as f:
-             f.write("FULL CONTEXT:\n" + context + "\n----------------\n")
-        
-        # Call LLM
-        response_text = await hive_mind._generate_response("ARCHITECT", context)
-        
-        # Save Agent Response
-        agent_msg = ChatMessage(
-            id=str(uuid.uuid4()),
-            session_id=session_id,
-            role="assistant",
-            content=response_text
-        )
-        local_db.add(agent_msg)
-        local_db.commit()
-        
-        # 2. Extract Tasks (Roadmap)
-        if "road map" in user_text.lower() or "roadmap" in user_text.lower() or "plan" in user_text.lower():
-            try:
-                # Direct extraction to ensure it works
-                import re
-                from app.core.database import OrchestratorTask
-                
-                tasks = []
-                # numbered lists 1. Task
-                matches = re.findall(r'^\d+\.\s+(.*)', response_text, re.MULTILINE)
-                tasks.extend(matches)
-                # bullet points - Task
-                matches_bullets = re.findall(r'^-\s+(.*)', response_text, re.MULTILINE)
-                tasks.extend(matches_bullets)
-                
-                for t_title in tasks:
-                    clean_title = t_title.strip("**").strip()
-                    if len(clean_title) > 3:
-                        task = OrchestratorTask(
-                            id=str(uuid.uuid4()),
-                            title=clean_title,
-                            status="PENDING",
-                            assigned_agent="ARCHITECT",
-                            session_id=session_id # [NEW] Link to session
-                        )
-                        local_db.add(task)
-                local_db.commit()
-                print(f"✅ [Local] Extracted {len(tasks)} tasks.")
-            except Exception as e_task:
-                print(f"⚠️ Task Extraction Error: {e_task}")
-
-        print("✅ [Local] Replied.")
+        # Delegate thinking to the Supreme Architect Service
+        await architect.process_request(user_text, session_id, db)
         
     except Exception as e:
-        print(f"❌ [Local] Error: {e}")
-        try:
-             with open(debug_path, "a", encoding="utf-8") as f:
-                 f.write(f"CRITICAL ERROR: {e}\n")
-        except: pass
+        print(f"❌ [Local] Orchestrator Error: {e}")
+        # Log error
     finally:
-        try: local_db.close()
-        except: pass
+        # Cleanup if needed (DB session is passed in, so let caller or dependency handle it? 
+        # Actually 'db' in args is likely from Depends(get_db) which closes automatically if it was a route handler,
+        # but here it's a BackgroundTask. BackgroundTasks with Depends can be tricky.
+        # Original code opened a NEW SessionLocal(). Let's stick to that pattern inside the service or here.
+        # Wait, the previous code passed `db` but then opened `local_db = SessionLocal()`. 
+        # The Architect service uses the passed `db`. 
+        # We should ensure `generate_response_local` creates a fresh session for background work.
+        pass
+
+# [FIX] Background Worker needs its own DB Session life-cycle
+async def generate_response_local_wrapper(user_text: str, session_id: str):
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        from app.services.agent.architect import architect
+        await architect.process_request(user_text, session_id, db)
+    except Exception as e:
+        print(f"❌ [Wrapper] Error: {e}")
+    finally:
+        db.close()
