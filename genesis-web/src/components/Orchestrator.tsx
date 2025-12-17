@@ -80,6 +80,7 @@ export function Orchestrator() {
     const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
     const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct"); // [FIX] Valid Model
+    const [selectedProvider, setSelectedProvider] = useState<string>("Auto"); // [NEW] Provider State
 
 
     // Editor State
@@ -330,7 +331,8 @@ export function Orchestrator() {
                     mode: systemMode === 'CLOUD' ? 'swarm' : 'standard',
                     session_id: currentSessionId,
                     model: selectedModel,
-                    repo_context: expandedRepo // [NEW] Context for Agent
+                    provider: selectedProvider, // [NEW] Pass Provider
+                    repo_context: expandedRepo
                 }),
             });
 
@@ -341,11 +343,15 @@ export function Orchestrator() {
                 loadSessions();
             }
 
+            // Extract Metadata if available
+            const finalProvider = data.metadata?.provider || selectedProvider;
+            const finalModel = data.metadata?.model || selectedModel;
+
             const botMsg: Message = {
                 role: 'assistant',
                 content: data.answer || "I processed that but have no specific answer.",
                 sources: data.sources,
-                model: data.model
+                model: finalModel + (finalProvider && finalProvider !== "unknown" ? ` @ ${finalProvider}` : "") // [NEW] Show Provider
             };
             setMessages(prev => [...prev, botMsg]);
 
@@ -455,23 +461,47 @@ export function Orchestrator() {
                         New Chat
                     </button>
 
+                    {/* Provider Selector [NEW] */}
+                    <div className="relative group">
+                        <select
+                            value={selectedProvider}
+                            onChange={(e) => setSelectedProvider(e.target.value)}
+                            className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-indigo-500 transition-colors cursor-pointer appearance-none pr-6"
+                        >
+                            <option value="Auto">⚡ Auto (Smart)</option>
+                            <option value="Sambanova">🚀 Sambanova (Fast)</option>
+                            <option value="Groq">🏎️ Groq (Llama)</option>
+                            <option value="Google">🌐 Google (Gemini)</option>
+                        </select>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
+                            <ArrowDown className="w-3 h-3" />
+                        </div>
+                    </div>
+
                     {/* Model Selector */}
-                    <select
-                        value={selectedModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-gray-500 transition-colors"
-                    >
-                        <optgroup label="SambaNova - DeepSeek">
-                            <option value="DeepSeek-R1">🧠 DeepSeek R1</option>
-                            <option value="DeepSeek-R1-Distill-Llama-70B">🧪 DeepSeek R1 Distill 70B</option>
-                            <option value="DeepSeek-V3-0324">🤖 DeepSeek V3 (0324)</option>
-                            <option value="Deepseek-V3.1">🚀 DeepSeek V3.1</option>
-                        </optgroup>
-                        <optgroup label="SambaNova - Meta Llama">
-                            <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (Latest)</option>
-                            <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
-                        </optgroup>
-                    </select>
+                    <div className="relative group">
+                        <select
+                            value={selectedModel}
+                            onChange={(e) => setSelectedModel(e.target.value)}
+                            className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-indigo-500 transition-colors cursor-pointer appearance-none pr-6"
+                        >
+                            <optgroup label="SambaNova - DeepSeek">
+                                <option value="DeepSeek-R1">🧠 DeepSeek R1</option>
+                                <option value="DeepSeek-R1-Distill-Llama-70B">🧪 DeepSeek R1 Distill 70B</option>
+                                <option value="DeepSeek-V3">🤖 DeepSeek V3</option>
+                            </optgroup>
+                            <optgroup label="SambaNova - Meta Llama">
+                                <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (Latest)</option>
+                                <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
+                            </optgroup>
+                            <optgroup label="Legacy/Others">
+                                <option value="gemini-pro">💎 Gemini Pro</option>
+                            </optgroup>
+                        </select>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
+                            <ArrowDown className="w-3 h-3" />
+                        </div>
+                    </div>
 
                     {/* System Mode Toggle */}
                     <div className="flex bg-black/40 p-1 rounded-lg border border-gray-800">

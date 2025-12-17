@@ -121,21 +121,21 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             repos = [d for d in os.listdir(base_repos_path) if os.path.isdir(os.path.join(base_repos_path, d))]
             
             # Strategy 0: Explicit Context from UI (Highest Priority)
+            print(f"DEBUG AGENT: Request Context: {request.repo_context}") # DEBUG
             if request.repo_context:
                 # Clean up "REPO: " prefix if present or verify existence
                 clean_ctx = request.repo_context.replace("REPO: ", "")
                 if clean_ctx in repos:
                     target_repo = clean_ctx
+                    print(f"DEBUG AGENT: Target Repo set to {target_repo} via Context") # DEBUG
 
             # Strategy A: Explicit Mention in Query (Override context if explicit?)
-            # Actually, usually UI context dictates "where I am looking". 
-            # But if I am in Repo A and ask about Repo B, maybe I want Repo B?
-            # For now, let's say UI Context is strong, but if missing, fallback to text.
             if not target_repo:
                 for r in repos:
                     repo_parts = r.lower().replace("-", " ").split()
                     if r.lower() in request.query_text.lower() or any(p in request.query_text.lower() for p in repo_parts if len(p)>3):
                         target_repo = r
+                        print(f"DEBUG AGENT: Target Repo set to {target_repo} via Query Heuristic") # DEBUG
                         break
             
             # Strategy B: Implicit Context (If only 1 repo exists, assume it's the target)
@@ -225,11 +225,21 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             
         # [NEW] AGENTIC ACTION EXECUTOR (Write to Disk)
         # Parse response for Write Blocks
-        if isinstance(response, str) and "*** WRITE_FILE:" in response and target_repo:
+        
+        print(f"DEBUG FULL RESPONSE TYPE: {type(response)}") # DEBUG
+        print(f"DEBUG FULL RESPONSE CONTENT: {response}") # DEBUG
+
+        # Normalize Response (Handle Dict vs Str)
+        response_text = response
+        if isinstance(response, dict):
+            response_text = response.get("answer", "")
+            
+        if isinstance(response_text, str) and "*** WRITE_FILE:" in response_text and target_repo:
             try:
                 # Regex to capture path and content
-                # Non-greedy match for content
-                action_blocks = re.findall(r"\*\*\* WRITE_FILE: (.*?) \*\*\*\n(.*?)(\*\*\* END_WRITE \*\*\*)", response, re.DOTALL)
+                import re
+                # Correct regex to handle mulitline and ensure we capture the END_WRITE tag
+                action_blocks = re.findall(r"\*\*\* WRITE_FILE: (.*?) \*\*\*\n(.*?)(\*\*\* END_WRITE \*\*\*|$)", response_text, re.DOTALL)
                 
                 writes_log = []
                 repo_root = os.path.join(base_repos_path, target_repo)

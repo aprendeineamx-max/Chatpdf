@@ -1,9 +1,9 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 99, in query_document
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 101, in query_document
     from app.services.rag.engine import rag_service
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\rag\engine.py", line 229
-    } for n in nodes[:5]]
-    ^
-SyntaxError: unmatched '}'
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\rag\engine.py", line 142
+    api_key_g = settings.GROQ_API_KEY
+    ^^^^^^^^^
+IndentationError: expected an indented block after 'try' statement on line 140
 
-Error: unmatched '}' (engine.py, line 229)
+Error: expected an indented block after 'try' statement on line 140 (engine.py, line 142)
