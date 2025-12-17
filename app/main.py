@@ -110,107 +110,10 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         # [NEW] REAL-TIME FILE SYSTEM ACCESS (Agent Mode)
         # Replaces static DB artifacts with live disk read
-        import os
-        knowledge_context = ""
+        from app.services.knowledge.realtime import realtime_knowledge
         
-        base_repos_path = "data/shared_repos"
-        # Determine Target Repo
-        target_repo = None
+        knowledge_context, target_repo = realtime_knowledge.get_file_context(request.query_text, request.repo_context)
         
-        if os.path.exists(base_repos_path):
-            repos = [d for d in os.listdir(base_repos_path) if os.path.isdir(os.path.join(base_repos_path, d))]
-            
-            # Strategy 0: Explicit Context from UI (Highest Priority)
-            print(f"DEBUG AGENT: Request Context: {request.repo_context}") # DEBUG
-            if request.repo_context:
-                # Clean up "REPO: " prefix if present or verify existence
-                clean_ctx = request.repo_context.replace("REPO: ", "")
-                if clean_ctx in repos:
-                    target_repo = clean_ctx
-                    print(f"DEBUG AGENT: Target Repo set to {target_repo} via Context") # DEBUG
-
-            # Strategy A: Explicit Mention in Query (Override context if explicit?)
-            if not target_repo:
-                for r in repos:
-                    repo_parts = r.lower().replace("-", " ").split()
-                    if r.lower() in request.query_text.lower() or any(p in request.query_text.lower() for p in repo_parts if len(p)>3):
-                        target_repo = r
-                        print(f"DEBUG AGENT: Target Repo set to {target_repo} via Query Heuristic") # DEBUG
-                        break
-            
-            # Strategy B: Implicit Context (If only 1 repo exists, assume it's the target)
-            if not target_repo and len(repos) == 1:
-                target_repo = repos[0]
-
-            # Strategy D: Default Fallback (If user says 'any repo' or vague)
-            if not target_repo and len(repos) > 0:
-                print(f"DEBUG AGENT: Defaulting to first repo {repos[0]} as fallback")
-                target_repo = repos[0]
-                
-            # Strategy C: File Hunting (If user asks for specific file, look for it in all repos)
-            # This handles "show me metadata.py" without naming the repo
-            if not target_repo:
-                words = request.query_text.split()
-                potential_files = [w for w in words if "." in w and len(w) > 3] # simple heuristic
-                for r in repos:
-                    # check if any potential file exists in this repo
-                    repo_root_check = os.path.join(base_repos_path, r)
-                    for pf in potential_files:
-                         # simple check if file exists anywhere in repo tree (shallow check first or full walk?)
-                         # let's just do a quick assumption or assign the first repo.
-                         # Better: Default to the most recently modified repo?
-                         # For MVP: Just pick the first repo if we can't decide. User can clarify.
-                         target_repo = repos[0] 
-                         break
-                    if target_repo: break
-            
-            # 2. Walk and Read
-            if target_repo:
-                repo_root = os.path.join(base_repos_path, target_repo)
-                knowledge_context += f"\n\n--- 🔴 LIVE FILE SYSTEM ACCESS: {target_repo} ---\n"
-                knowledge_context += "The user has granted you READ access to the following files. ANSWER ONLY BASED ON THIS CODE. DO NOT HALLUCINATE OR GIVE GENERIC DEFINITIONS.\n"
-                
-                file_count = 0
-                total_chars = 0
-                MAX_CHARS = 50000 # Increased for larger reads
-                
-                for root, dirs, files in os.walk(repo_root):
-                    # Exclude noise
-                    if ".git" in root or "node_modules" in root or "__pycache__" in root: continue
-                    
-                    for f in files:
-                        if f in ["package-lock.json", ".DS_Store", "yarn.lock"]: continue
-                        if f.endswith(".png") or f.endswith(".jpg"): continue
-                        
-                        file_path = os.path.join(root, f)
-                        rel_path = os.path.relpath(file_path, repo_root)
-                        
-                        # Prioritize the requested file if mentioned
-                        is_priority = f.lower() in request.query_text.lower()
-                        
-                        try:
-                            with open(file_path, "r", encoding="utf-8", errors="ignore") as file_obj:
-                                content = file_obj.read()
-                                
-                                # If this is the specific file requested, ensure it gets in!
-                                if is_priority:
-                                    knowledge_context = f"\n[PRIORITY FILE: {rel_path}]\n```\n{content}\n```\n" + knowledge_context
-                                    total_chars += len(content)
-                                    file_count += 1
-                                    continue
-
-                                if total_chars + len(content) > MAX_CHARS:
-                                    knowledge_context += f"\n[FILE: {rel_path}] (Truncated context)\n"
-                                    continue
-                                    
-                                knowledge_context += f"\n[FILE: {rel_path}]\n```\n{content}\n```\n"
-                                total_chars += len(content)
-                                file_count += 1
-                        except Exception as e_read:
-                             print(f"Error reading {rel_path}: {e_read}")
-                
-                print(f"✅ [Live Read] Injected {file_count} files ({total_chars} chars) from {target_repo}")
-
         # Prepend context to query
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
         
@@ -232,59 +135,17 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             
         # [NEW] AGENTIC ACTION EXECUTOR (Write to Disk)
         # Parse response for Write Blocks
+        from app.services.agent.executor import agent_executor
         
-        print(f"DEBUG FULL RESPONSE TYPE: {type(response)}") # DEBUG
-        print(f"DEBUG FULL RESPONSE CONTENT: {response}") # DEBUG
-
-        # Normalize Response (Handle Dict vs Str)
-        response_text = response
-        if isinstance(response, dict):
-            response_text = response.get("answer", "")
-            
-        if isinstance(response_text, str) and "*** WRITE_FILE:" in response_text:
-            if not target_repo:
-                 print("⚠️ AGENT WARNING: Agent tried to write file but no TARGET REPO identified. Write skipped.")
-            else:
-                try:
-                    # Regex to capture path and content (FLEXIBLE WHITESPACE)
-                    import re
-                    # Handles: "*** WRITE_FILE: path ***", "***WRITE_FILE: path***", newline, content, "*** END_WRITE ***"
-                    action_blocks = re.findall(r"\*\*\*\s*WRITE_FILE:\s*(.*?)\s*\*\*\*\n(.*?)\s*(\*\*\*\s*END_WRITE\s*\*\*\*|$)", response_text, re.DOTALL)
-                    
-                    writes_log = []
-                    repo_root = os.path.join(base_repos_path, target_repo)
-                    
-                    for path_raw, content_raw, _ in action_blocks:
-                        rel_path = path_raw.strip()
-                        file_content = content_raw.strip()
-                        
-                        # [FIX] Redundant Path Handling
-                        # If agent writes 'repo_name/file.txt', strip 'repo_name/'
-                        if target_repo and rel_path.startswith(f"{target_repo}/"):
-                            rel_path = rel_path[len(target_repo)+1:]
-                            print(f"⚠️ FIXED STRING: Stripped repo name from path -> {rel_path}")
-
-                        # Security Check: Prevent traversal
-                        if ".." in rel_path or rel_path.startswith("/"):
-                            print(f"⚠️ Security blocked write to: {rel_path}")
-                            continue
-                            
-                        full_path = os.path.join(repo_root, rel_path)
-                        
-                        # Ensure dir exists
-                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                        
-                        with open(full_path, "w", encoding="utf-8") as f_write:
-                            f_write.write(file_content)
-                        print(f"✅ AGENT WROTE TO: {full_path}")
-                        writes_log.append(f"Edited: {rel_path}")
-                    
-                    # Append action log to response so frontend knows
-                    if writes_log:
-                        response += f"\n\n⚡ AGENT ACTIONS EXECUTED:\n- " + "\n- ".join(writes_log)
-                        
-                except Exception as e_action:
-                    print(f"Agent Action Failed: {e_action}")
+        action_log = agent_executor.execute_actions(response, target_repo)
+        
+        # Append action log to response so frontend knows
+        if action_log and isinstance(response, dict):
+            # If response is dict, we can't easily append string to it, so we append to answer
+            if "answer" in response:
+                response["answer"] += action_log
+        elif action_log and isinstance(response, str):
+            response += action_log
 
         # 3. Save History (Async)
             
