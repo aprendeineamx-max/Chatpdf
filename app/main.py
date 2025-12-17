@@ -93,6 +93,7 @@ class QueryRequest(BaseModel):
     mode: str = "standard" 
     session_id: Optional[str] = None # Persistence
     model: Optional[str] = None # [NEW] Model Override
+    repo_context: Optional[str] = None # [NEW] Active Repo from UI
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
@@ -113,18 +114,29 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         knowledge_context = ""
         
         base_repos_path = "data/shared_repos"
+        # Determine Target Repo
+        target_repo = None
+        
         if os.path.exists(base_repos_path):
             repos = [d for d in os.listdir(base_repos_path) if os.path.isdir(os.path.join(base_repos_path, d))]
             
-            # 1. Identify Target Repo
-            target_repo = None
-            
-            # Strategy A: Explicit Mention
-            for r in repos:
-                repo_parts = r.lower().replace("-", " ").split()
-                if r.lower() in request.query_text.lower() or any(p in request.query_text.lower() for p in repo_parts if len(p)>3):
-                    target_repo = r
-                    break
+            # Strategy 0: Explicit Context from UI (Highest Priority)
+            if request.repo_context:
+                # Clean up "REPO: " prefix if present or verify existence
+                clean_ctx = request.repo_context.replace("REPO: ", "")
+                if clean_ctx in repos:
+                    target_repo = clean_ctx
+
+            # Strategy A: Explicit Mention in Query (Override context if explicit?)
+            # Actually, usually UI context dictates "where I am looking". 
+            # But if I am in Repo A and ask about Repo B, maybe I want Repo B?
+            # For now, let's say UI Context is strong, but if missing, fallback to text.
+            if not target_repo:
+                for r in repos:
+                    repo_parts = r.lower().replace("-", " ").split()
+                    if r.lower() in request.query_text.lower() or any(p in request.query_text.lower() for p in repo_parts if len(p)>3):
+                        target_repo = r
+                        break
             
             # Strategy B: Implicit Context (If only 1 repo exists, assume it's the target)
             if not target_repo and len(repos) == 1:
@@ -197,13 +209,58 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         # Prepend context to query
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
         
-        # [NEW] Agentic Prompt Injection
-        final_query += "\n\nINSTRUCTIONS: You are an autonomous AI Agent inside the user's IDE. You see the REAL-TIME code above. If asked to edit, propose the code changes clearly."
+        # [NEW] Agentic Prompt Injection (Read + Write)
+        final_query += "\n\nINSTRUCTIONS: You are an autonomous AI Agent inside the user's IDE.\n"
+        final_query += "1. READ the code context above.\n"
+        final_query += "2. IF asked to create/edit a file, OUTPUT THE FULL FILE CONTENT using this strict format:\n"
+        final_query += "*** WRITE_FILE: <relative_path_from_repo_root> ***\n"
+        final_query += "<code_content_here>\n"
+        final_query += "*** END_WRITE ***\n"
+        final_query += "Example: *** WRITE_FILE: src/utils/helper.js ***\nconsole.log('hello');\n*** END_WRITE ***\n"
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
         else:
             response = rag_service.query(final_query, request.pdf_id, model=request.model)
+            
+        # [NEW] AGENTIC ACTION EXECUTOR (Write to Disk)
+        # Parse response for Write Blocks
+        if isinstance(response, str) and "*** WRITE_FILE:" in response and target_repo:
+            try:
+                # Regex to capture path and content
+                # Non-greedy match for content
+                action_blocks = re.findall(r"\*\*\* WRITE_FILE: (.*?) \*\*\*\n(.*?)(\*\*\* END_WRITE \*\*\*)", response, re.DOTALL)
+                
+                writes_log = []
+                repo_root = os.path.join(base_repos_path, target_repo)
+                
+                for path_raw, content_raw, _ in action_blocks:
+                    rel_path = path_raw.strip()
+                    file_content = content_raw.strip()
+                    
+                    # Security Check: Prevent traversal
+                    if ".." in rel_path or rel_path.startswith("/"):
+                        print(f"⚠️ Security blocked write to: {rel_path}")
+                        continue
+                        
+                    full_path = os.path.join(repo_root, rel_path)
+                    
+                    # Ensure dir exists
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    
+                    with open(full_path, "w", encoding="utf-8") as f_write:
+                        f_write.write(file_content)
+                    print(f"✅ AGENT WROTE TO: {full_path}")
+                    writes_log.append(f"Edited: {rel_path}")
+                
+                # Append action log to response so frontend knows
+                if writes_log:
+                    response += f"\n\n⚡ AGENT ACTIONS EXECUTED:\n- " + "\n- ".join(writes_log)
+                    
+            except Exception as e_action:
+                print(f"Agent Action Failed: {e_action}")
+
+        # 3. Save History (Async)
             
         # 3. Save History (Async)
         if isinstance(response, dict):

@@ -329,7 +329,8 @@ export function Orchestrator() {
                     pdf_id: "all",
                     mode: systemMode === 'CLOUD' ? 'swarm' : 'standard',
                     session_id: currentSessionId,
-                    model: selectedModel
+                    model: selectedModel,
+                    repo_context: expandedRepo // [NEW] Context for Agent
                 }),
             });
 
@@ -648,7 +649,17 @@ export function Orchestrator() {
                                             >
                                                 {expandedRepo === repo.name ? <ArrowDown className="w-3 h-3 text-purple-400" /> : <ArrowRight className="w-3 h-3 text-gray-500" />}
                                                 <Database className="w-3 h-3 text-blue-400" />
-                                                <span className="text-xs font-bold truncate">{repo.name.replace("REPO: ", "")}</span>
+                                                <span className="text-xs font-bold truncate flex-1">{repo.name.replace("REPO: ", "")}</span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        fetchFiles(repo.name, "");
+                                                    }}
+                                                    className="p-1 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
+                                                    title="Refresh Files"
+                                                >
+                                                    <RefreshCcw className="w-3 h-3" />
+                                                </button>
                                             </div>
                                             {expandedRepo === repo.name && (
                                                 <div className="p-2 bg-[#0a0a0c] border-t border-gray-700">
@@ -660,7 +671,10 @@ export function Orchestrator() {
                                                                 <div
                                                                     key={idx}
                                                                     className="flex items-center gap-2 text-xs text-gray-400 hover:text-white cursor-pointer"
-                                                                    onClick={() => file.type === 'file' && fetchContent(repo.name, file.path)}
+                                                                    onClick={() => {
+                                                                        if (file.type === 'file') fetchContent(repo.name, file.path);
+                                                                        else fetchFiles(repo.name, file.path); // [FIX] Recursive Drill-down
+                                                                    }}
                                                                 >
                                                                     {file.type === 'dir' ? <Folder className="w-3 h-3 text-yellow-600" /> : <FileCode className="w-3 h-3 text-blue-500" />}
                                                                     {file.name}
@@ -694,6 +708,51 @@ export function Orchestrator() {
                         <div className="flex justify-end gap-2">
                             <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400">Cancel</button>
                             <button onClick={handleIngestSubmit} className="px-4 py-2 bg-purple-600 text-white rounded">Start</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* File Editor Modal */}
+            {selectedFile && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+                    <div className="bg-[#101014] border border-gray-700 rounded-lg shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col">
+                        {/* Toolbar */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-[#16161a]">
+                            <div className="flex items-center gap-2">
+                                <FileCode className="w-4 h-4 text-blue-400" />
+                                <span className="font-mono text-sm font-bold">{selectedFile.name}</span>
+                                {isEditing && <span className="text-xs text-yellow-500 italic">(Unsaved Changes)</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={saveCurrentFile}
+                                    disabled={!isEditing || isSaving}
+                                    className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold transition-colors ${!isEditing ? 'text-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+                                >
+                                    {isSaving ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                    Save
+                                </button>
+                                <button
+                                    onClick={() => setSelectedFile(null)}
+                                    className="p-1.5 hover:bg-gray-700 rounded text-gray-400"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                        {/* Editor */}
+                        <div className="flex-1 relative">
+                            <textarea
+                                className="w-full h-full bg-[#0a0a0c] text-gray-300 font-mono text-xs p-4 focus:outline-none resize-none leading-relaxed"
+                                value={selectedFile.content} // Using defaultVal approach or controlled?
+                                // If content updates from backend, we need useEffect. For now, simplistic:
+                                onChange={(e) => {
+                                    setEditorContent(e.target.value);
+                                    setIsEditing(true);
+                                    setSelectedFile(prev => prev ? { ...prev, content: e.target.value } : null);
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
