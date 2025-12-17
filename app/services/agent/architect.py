@@ -86,7 +86,23 @@ class SupremeArchitect:
                     self._log(f"Injecting structure for {repo_name}\n")
                     context += f"--- REPOSITORY: {repo_name} ---\nStructure Root:\n{art.content[:4000]}\n"
 
-        # B. Session Roadmap
+        # B. PDF Content Injection (NEW)
+        pdf_artifacts = db.query(AtomicArtifact).filter(
+            AtomicArtifact.filename.in_(["pdf_content.txt", "pdf_summary.txt"]),
+            AtomicArtifact.context_id.in_(valid_context_ids)
+        ).all()
+
+        if pdf_artifacts:
+            self._log(f"Found {len(pdf_artifacts)} PDF artifacts for session {session_id}.\n")
+            context += "\n\nAVAILABLE PDF DOCUMENTS:\n"
+            for art in pdf_artifacts:
+                if art.filename == "pdf_summary.txt":
+                    context += f"--- PDF SUMMARY ---\n{art.content}\n\n"
+                elif art.filename == "pdf_content.txt":
+                    # Inject first 8000 chars to avoid token overflow
+                    context += f"--- PDF CONTENT (Excerpt, {len(art.content)} chars total) ---\n{art.content[:8000]}\n\n"
+
+        # C. Session Roadmap
         existing_tasks = db.query(OrchestratorTask).filter(OrchestratorTask.session_id == session_id).all()
         if existing_tasks:
             task_list_str = "\n".join([f"- [{t.status}] {t.title}" for t in existing_tasks])
