@@ -73,10 +73,12 @@ async def send_message(msg: MessageCreate, background_tasks: BackgroundTasks, db
 @router.get("/tasks")
 def get_tasks(session_id: Optional[str] = None, db: Session = Depends(get_db)):
     if settings.CORE_MODE == "LOCAL":
+        if not session_id:
+            return []
+            
         query = db.query(OrchestratorTask)
-        if session_id:
-            # Filter by session
-            query = query.filter(OrchestratorTask.session_id == session_id)
+        # Filter by session
+        query = query.filter(OrchestratorTask.session_id == session_id)
         return query.all()
     return []
 
