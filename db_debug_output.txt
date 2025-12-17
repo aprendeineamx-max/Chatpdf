@@ -1,14 +1,4 @@
 --- DB STATE CHECK ---
-- ID: 1400092b-91cd-409e-afee-f56f2be61368
-  Name: REPO: crawlbase-mcp
-  Scope: global
-  Session: None
-
-- ID: a66f505f-6f8c-41f1-a5c0-7cae53098e43
-  Name: REPO: crawlbase-node
-  Scope: global
-  Session: None
-
 - ID: ef4782e4-5463-4f00-b1c4-e4c8c8de2231
   Name: REPO: Hello-World
   Scope: session
@@ -24,9 +14,9 @@
   Scope: session
   Session: 4b4aafbb-7b54-4a71-831a-f153a23c24c8
 
-- ID: 55993816-bf30-4956-aba3-840f90bc792f
+- ID: b5d0214c-fc8c-4168-8fbb-589b7e8de497
   Name: REPO: Proxy-Tools
   Scope: session
-  Session: None
+  Session: 94d6fc9c-65b0-443f-9969-c5d61469c450
 
 ✅ Proxy-Tools IS present.

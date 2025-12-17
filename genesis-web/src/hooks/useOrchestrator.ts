@@ -45,8 +45,9 @@ export function useOrchestrator() {
     // --- Effects ---
 
     useEffect(() => {
-        loadSessions();
-        loadData();
+        loadSessions(); // Initial load
+
+        loadData(); // Initial data load
 
         const interval = setInterval(() => {
             loadData(true);
@@ -54,7 +55,7 @@ export function useOrchestrator() {
 
         setIsPolling(true);
         return () => clearInterval(interval);
-    }, []);
+    }, [currentSessionId]); // [FIX] Re-create interval when session ID changes
 
     useEffect(() => {
         // Reload data if session changes to clear/update tasks
@@ -123,12 +124,14 @@ export function useOrchestrator() {
         } catch (e) { console.error("Failed to delete session", e); }
     }
 
-    async function loadData(silent = false) {
+    async function loadData(silent = false, overrideSessionId: string | null = null) {
         if (!silent) setLoading(true);
+        const targetSessionId = overrideSessionId !== null ? overrideSessionId : currentSessionId;
+
         try {
             const [tasksRes, reposRes] = await Promise.all([
-                fetch(`${API_URL}/api/v1/orchestrator/tasks?session_id=${currentSessionId || ''}`),
-                fetch(`${API_URL}/api/v1/ingest/list?session_id=${currentSessionId || ''}`)
+                fetch(`${API_URL}/api/v1/orchestrator/tasks?session_id=${targetSessionId || ''}`),
+                fetch(`${API_URL}/api/v1/ingest/list?session_id=${targetSessionId || ''}`)
             ]);
 
             if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -265,12 +268,14 @@ export function useOrchestrator() {
                 setMessages(prev => [...prev, { role: 'system', content: `✅ INGESTION QUEUED.` }]);
 
                 // [FIX] Adopt session ID if we were in a new/null session
+                let effectiveSessionId = currentSessionId;
                 if (data.session_id && data.session_id !== currentSessionId) {
                     setCurrentSessionId(data.session_id);
+                    effectiveSessionId = data.session_id;
                     loadSessions(); // Refresh session list
                 }
 
-                loadData(true);
+                loadData(true, effectiveSessionId);
             } else {
                 throw new Error("Ingestion failed");
             }

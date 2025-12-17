@@ -139,7 +139,9 @@ def list_repo_files(repo_name: str, path: str = ""):
                     "type": "dir" if entry.is_dir() else "file",
                     "path": os.path.join(path, entry.name).replace("\\", "/")
                 })
+        print(f"[DEBUG] list_repo_files: Scanned {full_path}, found {len(items)} items")
     except Exception as e:
+        print(f"[ERROR] list_repo_files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
         
     # Sort folders first, then files
