@@ -101,11 +101,15 @@ class HiveMind:
             
         return new_messages
 
-    async def _generate_response(self, persona_key: str, context: str) -> str:
+    async def _generate_response(self, persona_key: str, context: str, provider_override: str = None) -> str:
         persona = self.personas.get(persona_key)
         if not persona: return "Error: Unknown Persona"
 
-        providers = key_manager.get_failover_order()
+        # Logic: If Override exists, use ONLY that provider. Else use failover order.
+        if provider_override and provider_override != "auto":
+            providers = [provider_override]
+        else:
+            providers = key_manager.get_failover_order()
         
         for provider in providers:
             retries = 3 # Try 3 keys per provider
@@ -141,7 +145,7 @@ class HiveMind:
                          )
                          return completion.choices[0].message.content.strip()
 
-                    elif provider == "sambanova":
+                    elif "sambanova" in provider: # Handles 'sambanova', 'sambanova_primary', 'sambanova_secondary'
                          from openai import OpenAI
                          client = OpenAI(
                              base_url="https://api.sambanova.ai/v1",

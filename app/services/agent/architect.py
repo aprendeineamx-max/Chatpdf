@@ -10,13 +10,13 @@ class SupremeArchitect:
         self.hive = HiveMind()
         self.debug_path = r"C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\debug_rag_context.txt"
 
-    async def process_request(self, user_text: str, session_id: str, db: Session):
+    async def process_request(self, user_text: str, session_id: str, db: Session, provider: str = None):
         """
         Main entry point for the Architect's thought process.
         Returns: The stored ChatMessage object of the assistant's reply.
         """
         self._log(f"\n\n--- NEW REQUEST: {user_text} ---\n")
-        print(f"🧠 [Architect] Thinking about: {user_text}")
+        print(f"🧠 [Architect] Thinking about: {user_text} (Provider: {provider})")
 
         # 1. Build Context
         context = self._build_context(user_text, session_id, db)
@@ -27,7 +27,7 @@ class SupremeArchitect:
 
         # 3. Consult the Hive Mind (LLM)
         try:
-            response_text = await self.hive._generate_response("ARCHITECT", system_prompt)
+            response_text = await self.hive._generate_response("ARCHITECT", system_prompt, provider_override=provider)
         except Exception as e:
             self._log(f"CRITICAL LLM ERROR: {e}\n")
             response_text = "I am currently disconnected from the Hive Mind. Please check my neural pathways (API Keys/Server)."

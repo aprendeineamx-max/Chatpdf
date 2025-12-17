@@ -19,6 +19,7 @@ hive_mind = HiveMind()
 class MessageCreate(BaseModel):
     content: str
     role: str = "user"
+    provider: Optional[str] = None
 
 class TaskResponse(BaseModel):
     id: str
@@ -65,7 +66,7 @@ async def send_message(msg: MessageCreate, background_tasks: BackgroundTasks, db
         
         # 2. Trigger Response (Background)
         # Note: We don't pass 'db' here, the wrapper creates its own SessionLocal
-        background_tasks.add_task(generate_response_local_wrapper, msg.content, session_id)
+        background_tasks.add_task(generate_response_local_wrapper, msg.content, session_id, msg.provider)
         
         return {"status": "sent", "id": user_msg.id}
     else:
@@ -106,12 +107,12 @@ async def generate_response_local(user_text: str, session_id: str, db: Session):
         pass
 
 # [FIX] Background Worker needs its own DB Session life-cycle
-async def generate_response_local_wrapper(user_text: str, session_id: str):
+async def generate_response_local_wrapper(user_text: str, session_id: str, provider: str = None):
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
         from app.services.agent.architect import architect
-        await architect.process_request(user_text, session_id, db)
+        await architect.process_request(user_text, session_id, db, provider)
     except Exception as e:
         print(f"❌ [Wrapper] Error: {e}")
     finally:

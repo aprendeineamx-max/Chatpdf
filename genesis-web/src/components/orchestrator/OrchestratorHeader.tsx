@@ -63,8 +63,10 @@ export function OrchestratorHeader({
                         onChange={(e) => setSelectedProvider(e.target.value)}
                         className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-indigo-500 transition-colors cursor-pointer appearance-none pr-6"
                     >
-                        <option value="Sambanova">🚀 Sambanova (Fast)</option>
-                        <option value="Groq">🏎️ Groq (Llama)</option>
+                        <option value="sambanova">🚀 Sambanova (Auto)</option>
+                        <option value="sambanova_primary">🚀 Sambanova (Key 1)</option>
+                        <option value="sambanova_secondary">🚀 Sambanova (Key 2)</option>
+                        <option value="groq">🏎️ Groq (Llama)</option>
                     </select>
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
                         <ArrowDown className="w-3 h-3" />

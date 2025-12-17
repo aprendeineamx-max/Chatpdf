@@ -40,9 +40,26 @@ class SmartKeyManager:
 
     def get_best_key(self, provider: str = "google") -> Optional[str]:
         """
-        Returns the first ACTIVE key for the provider.
-        Round-robin selection among active keys.
+        Returns an active key for the provider.
+        Supports explicit selection via '_primary' or '_secondary' suffix.
         """
+        # 1. Handle Explicit Selection (e.g., "sambanova_primary")
+        if "_primary" in provider or "_secondary" in provider:
+            base_provider = provider.split("_")[0] # "sambanova"
+            pool = self.providers.get(base_provider, [])
+            if not pool: return None
+            
+            # Primary = Index 0, Secondary = Index 1
+            index = 0 if "_primary" in provider else 1
+            
+            if index < len(pool):
+                # Return specifically requested key if legitimate
+                return pool[index]["key"]
+            else:
+                logger.warning(f"Requested {provider} (Index {index}) but only {len(pool)} keys available.")
+                return None
+
+        # 2. Standard Rotation Logic
         pool = self.providers.get(provider, [])
         if not pool: return None
         

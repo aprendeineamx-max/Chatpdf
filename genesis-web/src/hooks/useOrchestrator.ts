@@ -19,7 +19,7 @@ export function useOrchestrator() {
     // System State
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
     const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct");
-    const [selectedProvider, setSelectedProvider] = useState<string>("Sambanova");
+    const [selectedProvider, setSelectedProvider] = useState<string>("sambanova");
 
     // Context / Knowledge State
     const [activeTab, setActiveTab] = useState<'roadmap' | 'knowledge'>('roadmap');
