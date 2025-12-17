@@ -141,6 +141,11 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             # Strategy B: Implicit Context (If only 1 repo exists, assume it's the target)
             if not target_repo and len(repos) == 1:
                 target_repo = repos[0]
+
+            # Strategy D: Default Fallback (If user says 'any repo' or vague)
+            if not target_repo and len(repos) > 0:
+                print(f"DEBUG AGENT: Defaulting to first repo {repos[0]} as fallback")
+                target_repo = repos[0]
                 
             # Strategy C: File Hunting (If user asks for specific file, look for it in all repos)
             # This handles "show me metadata.py" without naming the repo
@@ -210,13 +215,15 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
         
         # [NEW] Agentic Prompt Injection (Read + Write)
-        final_query += "\n\nINSTRUCTIONS: You are an autonomous AI Agent inside the user's IDE.\n"
-        final_query += "1. READ the code context above.\n"
-        final_query += "2. IF asked to create/edit a file, OUTPUT THE FULL FILE CONTENT using this strict format:\n"
-        final_query += "*** WRITE_FILE: <relative_path_from_repo_root> ***\n"
-        final_query += "<code_content_here>\n"
+        final_query += "\n\nINSTRUCCIONES: Eres un Agente de IA autónomo dentro del IDE.\n"
+        final_query += "1. LEE el contexto del código de arriba.\n"
+        final_query += "2. IDIOMA: Responde SIEMPRE en ESPAÑOL.\n"
+        final_query += "3. SI te piden crear/editar un archivo, USA ESTE FORMATO EXACTO:\n"
+        final_query += "*** WRITE_FILE: <ruta_relativa_desde_raiz_repo> ***\n"
+        final_query += "<contenido_del_codigo>\n"
         final_query += "*** END_WRITE ***\n"
-        final_query += "Example: *** WRITE_FILE: src/utils/helper.js ***\nconsole.log('hello');\n*** END_WRITE ***\n"
+        final_query += "IMPORTANTE: OBEDECE LA RUTA SOLICITADA EXACTAMENTE. Si piden en la raíz, usa 'archivo.txt', NO inventes carpetas (src, docs) si no se piden.\n"
+        final_query += "Ejemplo: *** WRITE_FILE: utils/helper.js ***\nconsole.log('hola');\n*** END_WRITE ***\n"
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
@@ -234,41 +241,50 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         if isinstance(response, dict):
             response_text = response.get("answer", "")
             
-        if isinstance(response_text, str) and "*** WRITE_FILE:" in response_text and target_repo:
-            try:
-                # Regex to capture path and content
-                import re
-                # Correct regex to handle mulitline and ensure we capture the END_WRITE tag
-                action_blocks = re.findall(r"\*\*\* WRITE_FILE: (.*?) \*\*\*\n(.*?)(\*\*\* END_WRITE \*\*\*|$)", response_text, re.DOTALL)
-                
-                writes_log = []
-                repo_root = os.path.join(base_repos_path, target_repo)
-                
-                for path_raw, content_raw, _ in action_blocks:
-                    rel_path = path_raw.strip()
-                    file_content = content_raw.strip()
+        if isinstance(response_text, str) and "*** WRITE_FILE:" in response_text:
+            if not target_repo:
+                 print("⚠️ AGENT WARNING: Agent tried to write file but no TARGET REPO identified. Write skipped.")
+            else:
+                try:
+                    # Regex to capture path and content (FLEXIBLE WHITESPACE)
+                    import re
+                    # Handles: "*** WRITE_FILE: path ***", "***WRITE_FILE: path***", newline, content, "*** END_WRITE ***"
+                    action_blocks = re.findall(r"\*\*\*\s*WRITE_FILE:\s*(.*?)\s*\*\*\*\n(.*?)\s*(\*\*\*\s*END_WRITE\s*\*\*\*|$)", response_text, re.DOTALL)
                     
-                    # Security Check: Prevent traversal
-                    if ".." in rel_path or rel_path.startswith("/"):
-                        print(f"⚠️ Security blocked write to: {rel_path}")
-                        continue
+                    writes_log = []
+                    repo_root = os.path.join(base_repos_path, target_repo)
+                    
+                    for path_raw, content_raw, _ in action_blocks:
+                        rel_path = path_raw.strip()
+                        file_content = content_raw.strip()
                         
-                    full_path = os.path.join(repo_root, rel_path)
+                        # [FIX] Redundant Path Handling
+                        # If agent writes 'repo_name/file.txt', strip 'repo_name/'
+                        if target_repo and rel_path.startswith(f"{target_repo}/"):
+                            rel_path = rel_path[len(target_repo)+1:]
+                            print(f"⚠️ FIXED STRING: Stripped repo name from path -> {rel_path}")
+
+                        # Security Check: Prevent traversal
+                        if ".." in rel_path or rel_path.startswith("/"):
+                            print(f"⚠️ Security blocked write to: {rel_path}")
+                            continue
+                            
+                        full_path = os.path.join(repo_root, rel_path)
+                        
+                        # Ensure dir exists
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        
+                        with open(full_path, "w", encoding="utf-8") as f_write:
+                            f_write.write(file_content)
+                        print(f"✅ AGENT WROTE TO: {full_path}")
+                        writes_log.append(f"Edited: {rel_path}")
                     
-                    # Ensure dir exists
-                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                    
-                    with open(full_path, "w", encoding="utf-8") as f_write:
-                        f_write.write(file_content)
-                    print(f"✅ AGENT WROTE TO: {full_path}")
-                    writes_log.append(f"Edited: {rel_path}")
-                
-                # Append action log to response so frontend knows
-                if writes_log:
-                    response += f"\n\n⚡ AGENT ACTIONS EXECUTED:\n- " + "\n- ".join(writes_log)
-                    
-            except Exception as e_action:
-                print(f"Agent Action Failed: {e_action}")
+                    # Append action log to response so frontend knows
+                    if writes_log:
+                        response += f"\n\n⚡ AGENT ACTIONS EXECUTED:\n- " + "\n- ".join(writes_log)
+                        
+                except Exception as e_action:
+                    print(f"Agent Action Failed: {e_action}")
 
         # 3. Save History (Async)
             

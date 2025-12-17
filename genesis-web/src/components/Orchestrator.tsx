@@ -1,22 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle2, Circle, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowUp, ArrowDown, X, FileCode, Folder, ArrowLeft, Layout, ArrowRight, MessageSquare, Copy, Trash2, Brain } from 'lucide-react'; // [FIX] Added Brain
-import Editor from '@monaco-editor/react';
+import { Send, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowDown, X, FileCode, Folder, ArrowRight, MessageSquare, Copy, Trash2, Brain, Layout } from 'lucide-react'; // [FIX] Cleaned imports
 import { AtomicContext, AtomicArtifact } from '../types';
 
-// Helper to determine language
-function getLanguageFromPath(path: string): string {
-    if (path.endsWith('.ts') || path.endsWith('.tsx')) return 'typescript';
-    if (path.endsWith('.js') || path.endsWith('.jsx')) return 'javascript';
-    if (path.endsWith('.py')) return 'python';
-    if (path.endsWith('.json')) return 'json';
-    if (path.endsWith('.html')) return 'html';
-    if (path.endsWith('.css')) return 'css';
-    if (path.endsWith('.md')) return 'markdown';
-    if (path.endsWith('.sql')) return 'sql';
-    if (path.endsWith('.yaml') || path.endsWith('.yml')) return 'yaml';
-    return 'plaintext';
-}
+
 
 // Use the API URL from environment or default to local backend
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -67,7 +54,7 @@ export function Orchestrator() {
 
     // System State
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
-    const [showMenu, setShowMenu] = useState(false);
+    // const [showMenu, setShowMenu] = useState(false); // Unused
 
     // Context / Knowledge State
     const [activeTab, setActiveTab] = useState<'roadmap' | 'knowledge'>('roadmap');
@@ -76,7 +63,7 @@ export function Orchestrator() {
     // File Explorer State
     const [expandedRepo, setExpandedRepo] = useState<string | null>(null);
     const [repoFiles, setRepoFiles] = useState<FileNode[]>([]);
-    const [currentPath, setCurrentPath] = useState<string>("");
+    // const [currentPath, setCurrentPath] = useState<string>(""); // Unused
     const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
     const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct"); // [FIX] Valid Model
@@ -93,7 +80,7 @@ export function Orchestrator() {
     const [ingestUrl, setIngestUrl] = useState('');
 
     // UI Responsiveness State
-    const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+    // const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false); // Unused
 
     // Initial Load & Polling (Pulse Mode)
     useEffect(() => {
@@ -207,7 +194,7 @@ export function Orchestrator() {
 
     async function fetchSystemStatus() {
         try {
-            const res = await fetch(`${API_URL}/health`);
+            await fetch(`${API_URL}/health`);
         } catch (e) { console.error("Health check failed", e); }
     }
 
@@ -220,7 +207,7 @@ export function Orchestrator() {
             if (res.ok) {
                 const data = await res.json();
                 setRepoFiles(data);
-                setCurrentPath(path);
+                // setCurrentPath(path);
             }
         } catch (e) { console.error("File Fetch Error:", e); }
         finally { setIsLoadingFiles(false); }
@@ -262,56 +249,7 @@ export function Orchestrator() {
     }
 
     // --- System Actions ---
-    const switchMode = async () => {
-        const newMode = systemMode === "LOCAL" ? "CLOUD" : "LOCAL";
-        if (!confirm(`Switch to ${newMode}? Backend will require restart.`)) return;
 
-        await fetch(`${API_URL}/api/v1/system/mode`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: newMode })
-        });
-        alert(`Switched to ${newMode}. Please restart the Backend Terminal.`);
-        setSystemMode(newMode);
-        setShowMenu(false);
-    };
-
-    const triggerSync = async (direction: "PUSH" | "PULL") => {
-        if (!confirm(`${direction} Sync? This acts as a Merge.`)) return;
-        await fetch(`${API_URL}/api/v1/system/sync`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ direction, strategy: "MERGE" })
-        });
-        alert("Sync started in background.");
-        setShowMenu(false);
-    };
-
-    const triggerBackup = async () => {
-        const content = input;
-        setInput('');
-
-        try {
-            const tempId = 'temp-' + Date.now();
-            setMessages(prev => [...prev, {
-                id: tempId,
-                role: 'user',
-                content: content,
-                created_at: new Date().toISOString()
-            }]);
-
-            await fetch(`${API_URL}/api/v1/orchestrator/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, role: 'user' })
-            });
-
-            await loadData(true);
-        } catch (error) {
-            console.error("Chat Error:", error);
-            alert("Failed to send message to Local Core. Is the backend running?");
-        } finally { setLoading(false); }
-    };
 
     const sendMessage = async () => {
         if (!input.trim()) return;
@@ -586,7 +524,7 @@ export function Orchestrator() {
                                         }`}>
                                         <div className="flex items-center gap-2 mb-1 text-[10px] opacity-50 uppercase tracking-widest font-bold">
                                             {msg.role === 'user' ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
-                                            {msg.role === 'user' ? "USER" : (msg.model || "ASSISTANT")}
+                                            {msg.role === 'user' ? "USER" : (msg.model || "IA")}
                                         </div>
 
                                         {/* Reasoning Block (DeepSeek) */}
