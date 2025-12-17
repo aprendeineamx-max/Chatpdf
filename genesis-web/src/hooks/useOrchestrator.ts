@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RepoJob, Message, Task, FileNode, Session } from '../types/orchestrator';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -15,6 +15,9 @@ export function useOrchestrator() {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [showHistory, setShowHistory] = useState(true);
+
+    // [DEFINITIVE FIX] Ref to hold the LATEST session ID for the interval callback
+    const sessionIdRef = useRef<string | null>(null);
 
     // System State
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
@@ -44,23 +47,25 @@ export function useOrchestrator() {
 
     // --- Effects ---
 
+    // [DEFINITIVE FIX] Keep ref in sync with state
     useEffect(() => {
-        loadSessions(); // Initial load
+        sessionIdRef.current = currentSessionId;
+        // Also reload data when session changes
+        loadDataWithRef(true);
+    }, [currentSessionId]);
 
-        loadData(); // Initial data load
+    // Polling Effect - runs ONCE, interval uses ref
+    useEffect(() => {
+        loadSessions();
+        loadDataWithRef();
 
         const interval = setInterval(() => {
-            loadData(true);
+            loadDataWithRef(true);
         }, 5000);
 
         setIsPolling(true);
         return () => clearInterval(interval);
-    }, [currentSessionId]); // [FIX] Re-create interval when session ID changes
-
-    useEffect(() => {
-        // Reload data if session changes to clear/update tasks
-        loadData(true);
-    }, [currentSessionId]);
+    }, []); // Empty dependency - interval reads from ref
 
     // Sync Editor with Selected File
     useEffect(() => {
@@ -124,6 +129,28 @@ export function useOrchestrator() {
         } catch (e) { console.error("Failed to delete session", e); }
     }
 
+    // [DEFINITIVE FIX] This function reads from the REF, not state
+    // Guaranteed to always use the latest session ID
+    async function loadDataWithRef(silent = false) {
+        if (!silent) setLoading(true);
+        const targetSessionId = sessionIdRef.current; // Read from REF!
+
+        try {
+            const [tasksRes, reposRes] = await Promise.all([
+                fetch(`${API_URL}/api/v1/orchestrator/tasks?session_id=${targetSessionId || ''}`),
+                fetch(`${API_URL}/api/v1/ingest/list?session_id=${targetSessionId || ''}`)
+            ]);
+
+            if (tasksRes.ok) setTasks(await tasksRes.json());
+            if (reposRes.ok) setRepos(await reposRes.json());
+        } catch (error) {
+            console.error('Connection Error:', error);
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    }
+
+    // Keep old loadData for other usages that might pass explicit ID
     async function loadData(silent = false, overrideSessionId: string | null = null) {
         if (!silent) setLoading(true);
         const targetSessionId = overrideSessionId !== null ? overrideSessionId : currentSessionId;
