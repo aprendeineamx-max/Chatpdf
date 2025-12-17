@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, BrainCircuit, WifiOff, Wifi, Cloud, Database, RefreshCcw, Save, ArrowDown, X, FileCode, Folder, ArrowRight, MessageSquare, Copy, Trash2, Brain, Layout } from 'lucide-react'; // [FIX] Cleaned imports
-import { AtomicContext, AtomicArtifact } from '../types';
+
 
 
 
