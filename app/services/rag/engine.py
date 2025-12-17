@@ -136,8 +136,20 @@ class RAGService:
             
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        
+        # [FIX] System Prompt for Language and Behavior
+        system_instruction = (
+            "Eres Genesis, un arquitecto de software experto. "
+            "IDIOMA: RESPONDE SIEMPRE EN ESPAÑOL. "
+            "Tienes capacidad de crear y editar archivos usando el formato: "
+            "*** WRITE_FILE: <path> ***\n<content>\n*** END_WRITE ***"
+        )
+
         data = {
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}
+            ],
             "model": final_model
         }
         try:
@@ -158,8 +170,20 @@ class RAGService:
              
         url = "https://api.sambanova.ai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        
+        # [FIX] System Prompt for Language and Behavior
+        system_instruction = (
+            "Eres Genesis, un arquitecto de software experto. "
+            "IDIOMA: RESPONDE SIEMPRE EN ESPAÑOL. "
+            "Tienes capacidad de crear y editar archivos usando el formato: "
+            "*** WRITE_FILE: <path> ***\n<content>\n*** END_WRITE ***"
+        )
+        
         data = {
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}
+            ],
             "model": final_model
         }
         try:
