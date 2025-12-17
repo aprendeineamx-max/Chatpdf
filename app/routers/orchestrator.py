@@ -71,9 +71,13 @@ async def send_message(msg: MessageCreate, background_tasks: BackgroundTasks, db
         raise HTTPException(status_code=501, detail="Cloud mode proxy not implemented yet")
 
 @router.get("/tasks")
-def get_tasks(db: Session = Depends(get_db)):
+def get_tasks(session_id: Optional[str] = None, db: Session = Depends(get_db)):
     if settings.CORE_MODE == "LOCAL":
-        return db.query(OrchestratorTask).all()
+        query = db.query(OrchestratorTask)
+        if session_id:
+            # Filter by session
+            query = query.filter(OrchestratorTask.session_id == session_id)
+        return query.all()
     return []
 
 # --- BACKGROUND WORKER ---
@@ -112,6 +116,12 @@ async def generate_response_local(user_text: str, session_id: str, db: Session):
         # Also try to fetch summaries if query mentions "repo" or "code"
         if "repo" in user_text.lower() or "code" in user_text.lower() or "access" in user_text.lower():
              pass
+
+        # [NEW] Inject Session Roadmap
+        existing_tasks = local_db.query(OrchestratorTask).filter(OrchestratorTask.session_id == session_id).all()
+        if existing_tasks:
+            task_list_str = "\n".join([f"- [{t.status}] {t.title}" for t in existing_tasks])
+            knowledge_context += f"\nCURRENT ROADMAP (Use this context):\n{task_list_str}\n"
 
         context = f"User: {user_text}\nRole: Supreme Architect. Guide the user.\n{knowledge_context}"
         
@@ -153,7 +163,8 @@ async def generate_response_local(user_text: str, session_id: str, db: Session):
                             id=str(uuid.uuid4()),
                             title=clean_title,
                             status="PENDING",
-                            assigned_agent="ARCHITECT"
+                            assigned_agent="ARCHITECT",
+                            session_id=session_id # [NEW] Link to session
                         )
                         local_db.add(task)
                 local_db.commit()

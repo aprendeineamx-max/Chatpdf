@@ -44,6 +44,8 @@ class AtomicContext(Base):
     folder_name = Column(String, unique=True)
     timestamp = Column(DateTime)
     batch_id = Column(String)
+    session_id = Column(String, nullable=True) # [NEW] Scoping
+    scope = Column(String, default="global")   # [NEW] 'global' or 'session'
     created_at = Column(DateTime, default=datetime.utcnow)
     
     artifacts = relationship("AtomicArtifact", back_populates="context", cascade="all, delete-orphan")
@@ -69,6 +71,7 @@ class OrchestratorTask(Base):
     priority = Column(String, default="MEDIUM")
     assigned_agent = Column(String, default="auto")
     evidence = Column(JSON, default={})
+    session_id = Column(String, nullable=True) # [NEW] Scoping
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 

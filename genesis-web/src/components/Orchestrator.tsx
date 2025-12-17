@@ -78,6 +78,7 @@ export function Orchestrator() {
     // Ingest Modal State
     const [showIngestModal, setShowIngestModal] = useState(false);
     const [ingestUrl, setIngestUrl] = useState('');
+    const [ingestScope, setIngestScope] = useState<'global' | 'session'>('global'); // [NEW] Scope State
 
     // UI Responsiveness State
     // const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false); // Unused
@@ -177,8 +178,8 @@ export function Orchestrator() {
         if (!silent) setLoading(true);
         try {
             const [tasksRes, reposRes] = await Promise.all([
-                fetch(`${API_URL}/api/v1/orchestrator/tasks`), // [FIX] Updated endpoint
-                fetch(`${API_URL}/api/v1/ingest/list`)        // [FIX] Updated endpoint
+                fetch(`${API_URL}/api/v1/orchestrator/tasks?session_id=${currentSessionId || ''}`), // [FIX] Scoped Tasks
+                fetch(`${API_URL}/api/v1/ingest/list?session_id=${currentSessionId || ''}`)        // [FIX] Scoped Repos
             ]);
 
             if (tasksRes.ok) setTasks(await tasksRes.json());
@@ -321,7 +322,11 @@ export function Orchestrator() {
             const res = await fetch(`${API_URL}/api/v1/ingest/repo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url }) // [FIX] Changed repo_url to url
+                body: JSON.stringify({
+                    url: url,
+                    scope: ingestScope,
+                    session_id: currentSessionId
+                })
             });
 
             if (res.ok) {
@@ -668,6 +673,21 @@ export function Orchestrator() {
                             value={ingestUrl}
                             onChange={e => setIngestUrl(e.target.value)}
                         />
+
+                        {/* Scope Selector */}
+                        <div className="flex gap-4 mb-6">
+                            <label className={`flex-1 cursor-pointer p-3 rounded border ${ingestScope === 'global' ? 'bg-purple-900/40 border-purple-500' : 'bg-[#0f0f13] border-gray-700 hover:border-gray-600'}`}>
+                                <input type="radio" className="hidden" name="scope" checked={ingestScope === 'global'} onChange={() => setIngestScope('global')} />
+                                <div className="font-bold text-sm text-gray-200 mb-1">🌍 Global Knowledge</div>
+                                <div className="text-[10px] text-gray-400">Available to ALL chats and agents.</div>
+                            </label>
+
+                            <label className={`flex-1 cursor-pointer p-3 rounded border ${ingestScope === 'session' ? 'bg-blue-900/40 border-blue-500' : 'bg-[#0f0f13] border-gray-700 hover:border-gray-600'}`}>
+                                <input type="radio" className="hidden" name="scope" checked={ingestScope === 'session'} onChange={() => setIngestScope('session')} />
+                                <div className="font-bold text-sm text-gray-200 mb-1">🔒 Chat Specific</div>
+                                <div className="text-[10px] text-gray-400">Only visible in THIS conversation.</div>
+                            </label>
+                        </div>
                         <div className="flex justify-end gap-2">
                             <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400">Cancel</button>
                             <button onClick={handleIngestSubmit} className="px-4 py-2 bg-purple-600 text-white rounded">Start</button>

@@ -9,6 +9,8 @@ router = APIRouter(prefix="/api/v1/ingest", tags=["ingest"])
 
 class RepoRequest(BaseModel):
     url: str
+    scope: str = "global" # 'global' or 'session'
+    session_id: Optional[str] = None
 
 
 @router.post("/repo")
@@ -24,7 +26,7 @@ async def ingest_repository(req: RepoRequest, background_tasks: BackgroundTasks)
     job_id = str(uuid.uuid4())
         
     # Run in background to avoid blocking
-    background_tasks.add_task(repo_ingestor.ingest_repo, req.url, job_id)
+    background_tasks.add_task(repo_ingestor.ingest_repo, req.url, job_id, req.scope, req.session_id)
     
     return {
         "status": "started", 
@@ -34,7 +36,7 @@ async def ingest_repository(req: RepoRequest, background_tasks: BackgroundTasks)
     }
 
 @router.get("/list")
-def list_ingested_repos():
+def list_ingested_repos(session_id: Optional[str] = None):
     """
     Lists all ingested repositories (AtomicContexts) AND active jobs.
     """
@@ -44,15 +46,27 @@ def list_ingested_repos():
     db = SessionLocal()
     completed = []
     try:
-        contexts = db.query(AtomicContext).filter(AtomicContext.batch_id == "REPO_INGESTION").all()
+        # Filter: Scope 'global' OR Scope 'session' matches current session
+        query = db.query(AtomicContext).filter(AtomicContext.batch_id == "REPO_INGESTION")
+        contexts = query.all()
+        
+        # In-memory filter for complex OR logic (SQLite/SQLAlchemy simple fallback)
+        filtered_contexts = []
+        for ctx in contexts:
+            if ctx.scope == "global":
+                filtered_contexts.append(ctx)
+            elif ctx.scope == "session" and ctx.session_id == session_id:
+                filtered_contexts.append(ctx)
+        
         completed = [
             {
                 "id": ctx.id,
                 "name": ctx.folder_name,
                 "timestamp": ctx.timestamp.isoformat() if ctx.timestamp else None,
-                "status": "COMPLETED"
+                "status": "COMPLETED",
+                "scope": ctx.scope # Return scope info
             }
-            for ctx in contexts
+            for ctx in filtered_contexts
         ]
     finally:
         db.close()

@@ -18,7 +18,7 @@ class RepoIngestor:
         # Simple in-memory job tracking: {job_id: {status: str, repo: str, error: str, start_time: str}}
         self.JOBS: Dict[str, Dict[str, Any]] = {}
 
-    def ingest_repo(self, repo_url: str, job_id: str) -> Dict[str, Any]:
+    def ingest_repo(self, repo_url: str, job_id: str, scope: str = "global", session_id: str = None) -> Dict[str, Any]:
         """
         Clones a repo and generates a knowledge artifact.
         Returns the ID of the created AtomicContext.
@@ -79,7 +79,9 @@ class RepoIngestor:
                     id=context_id,
                     folder_name=f"REPO: {repo_name}",
                     timestamp=datetime.utcnow(),
-                    batch_id="REPO_INGESTION"
+                    batch_id="REPO_INGESTION",
+                    scope=scope,
+                    session_id=session_id
                 )
                 db.add(ctx)
                 
