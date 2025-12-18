@@ -88,6 +88,7 @@ export function useOrchestrator() {
         setMessages([]);
         setCurrentSessionId(null);
         setTasks([]);
+        setIngestedRepos([]); // [FIX] Clear knowledge panel for new chat
         loadSessions();
     }
 

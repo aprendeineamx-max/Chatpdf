@@ -86,6 +86,11 @@ def list_ingested_repos(session_id: Optional[str] = None):
     from app.core.database import SessionLocal, AtomicContext
     from sqlalchemy import or_
     
+    # [FIX] If no session_id provided (new chat), return empty list
+    # This ensures the KNOWLEDGE panel is clean for new chats
+    if not session_id:
+        return []
+    
     # 1. Get Completed from DB
     db = SessionLocal()
     completed = []
