@@ -23,6 +23,7 @@ export function useOrchestrator() {
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
     const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct");
     const [selectedProvider, setSelectedProvider] = useState<string>("sambanova");
+    const [ragMode, setRagMode] = useState<string>("injection"); // NEW: "injection" or "semantic"
 
     // Context / Knowledge State
     const [activeTab, setActiveTab] = useState<'roadmap' | 'knowledge'>('roadmap');
@@ -88,7 +89,7 @@ export function useOrchestrator() {
         setMessages([]);
         setCurrentSessionId(null);
         setTasks([]);
-        setIngestedRepos([]); // [FIX] Clear knowledge panel for new chat
+        setRepos([]); // [FIX] Clear knowledge panel for new chat
         loadSessions();
     }
 
@@ -191,7 +192,8 @@ export function useOrchestrator() {
                     session_id: currentSessionId,
                     model: selectedModel,
                     provider: selectedProvider,
-                    repo_context: expandedRepo
+                    repo_context: expandedRepo,
+                    rag_mode: ragMode // NEW: Pass RAG mode for semantic/injection choice
                 }),
             });
 
@@ -324,7 +326,12 @@ export function useOrchestrator() {
             const res = await fetch(`${API_URL}/api/v1/ingest/pdf`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, scope: ingestScope, session_id: currentSessionId })
+                body: JSON.stringify({
+                    url,
+                    scope: ingestScope,
+                    session_id: currentSessionId,
+                    rag_mode: ragMode // NEW: Pass RAG mode for embedding generation
+                })
             });
 
             if (res.ok) {
@@ -353,6 +360,7 @@ export function useOrchestrator() {
         tasks, messages, input, setInput, loading, isPolling,
         currentSessionId, sessions, showHistory, setShowHistory,
         systemMode, setSystemMode, selectedModel, setSelectedModel, selectedProvider, setSelectedProvider,
+        ragMode, setRagMode, // NEW: RAG Mode
         activeTab, setActiveTab, repos,
         expandedRepo, setExpandedRepo, repoFiles, selectedFile, setSelectedFile, isLoadingFiles,
         ingestUrl, setIngestUrl, ingestScope, setIngestScope, showIngestModal, setShowIngestModal,

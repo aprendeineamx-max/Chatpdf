@@ -17,6 +17,7 @@ class PDFRequest(BaseModel):
     url: str
     scope: str = "global"
     session_id: Optional[str] = None
+    rag_mode: str = "injection"  # NEW: "injection" or "semantic"
 
 
 @router.post("/repo")
@@ -66,15 +67,23 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     
     job_id = str(uuid.uuid4())
     
-    # Run in background
-    background_tasks.add_task(pdf_ingestor.ingest_pdf_url, req.url, job_id, req.scope, final_session_id)
+    # Run in background (pass rag_mode for semantic embeddings)
+    background_tasks.add_task(
+        pdf_ingestor.ingest_pdf_url, 
+        req.url, 
+        job_id, 
+        req.scope, 
+        final_session_id,
+        req.rag_mode  # NEW: pass RAG mode
+    )
     
     return {
         "status": "started",
-        "message": "PDF ingestion started.",
+        "message": f"PDF ingestion started (mode: {req.rag_mode}).",
         "job_id": job_id,
         "pdf_url": req.url,
-        "session_id": final_session_id
+        "session_id": final_session_id,
+        "rag_mode": req.rag_mode  # Return mode for frontend
     }
 
 

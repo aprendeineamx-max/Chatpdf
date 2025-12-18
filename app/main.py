@@ -94,6 +94,7 @@ class QueryRequest(BaseModel):
     session_id: Optional[str] = None # Persistence
     model: Optional[str] = None # [NEW] Model Override
     repo_context: Optional[str] = None # [NEW] Active Repo from UI
+    rag_mode: str = "injection"  # NEW: "injection" or "semantic"
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
@@ -154,14 +155,40 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 
                 if pdf_artifacts:
                     knowledge_context += "\n\n=== DOCUMENTOS PDF DE ESTA CONVERSACIÓN ===\n"
-                    for art in pdf_artifacts:
-                        if art.filename == "pdf_summary.txt":
-                            knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
-                        elif art.filename == "pdf_content.txt":
-                            # [FIX] Inject MUCH more content - 200k chars allows ~300 pages
-                            # LLM context windows are typically 100k+ tokens now
-                            content_to_inject = art.content[:200000] if len(art.content) > 200000 else art.content
-                            knowledge_context += f"--- CONTENIDO COMPLETO DEL PDF ({len(art.content)} chars) ---\n{content_to_inject}\n\n"
+                    
+                    # DUAL-MODE RETRIEVAL
+                    if request.rag_mode == "semantic":
+                        # SEMANTIC RAG: Only retrieve relevant chunks
+                        try:
+                            from app.services.knowledge.vector_store import vector_store
+                            
+                            for ctx_id in session_context_ids:
+                                relevant_chunks = vector_store.search(
+                                    doc_id=ctx_id,
+                                    query=request.query_text,
+                                    top_k=10  # Get 10 most relevant chunks
+                                )
+                                if relevant_chunks:
+                                    knowledge_context += f"--- FRAGMENTOS RELEVANTES (Semantic RAG) ---\n"
+                                    knowledge_context += "\n---\n".join(relevant_chunks)
+                                    knowledge_context += "\n\n"
+                                    print(f"🔍 [Semantic RAG] Injected {len(relevant_chunks)} relevant chunks")
+                        except Exception as sem_err:
+                            print(f"⚠️ [Semantic RAG] Fallback to injection: {sem_err}")
+                            # Fallback to injection if semantic fails
+                            for art in pdf_artifacts:
+                                if art.filename == "pdf_content.txt":
+                                    knowledge_context += f"--- CONTENIDO DEL PDF ---\n{art.content[:200000]}\n\n"
+                    
+                    else:
+                        # DIRECT INJECTION: Full content (existing behavior)
+                        for art in pdf_artifacts:
+                            if art.filename == "pdf_summary.txt":
+                                knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
+                            elif art.filename == "pdf_content.txt":
+                                # Inject up to 200k chars
+                                content_to_inject = art.content[:200000] if len(art.content) > 200000 else art.content
+                                knowledge_context += f"--- CONTENIDO COMPLETO DEL PDF ({len(art.content)} chars) ---\n{content_to_inject}\n\n"
         finally:
             db.close()
         

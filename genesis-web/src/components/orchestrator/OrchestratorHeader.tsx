@@ -12,6 +12,9 @@ interface OrchestratorHeaderProps {
     setSelectedModel: (model: string) => void;
     systemMode: "LOCAL" | "CLOUD";
     setSystemMode: (mode: "LOCAL" | "CLOUD") => void;
+    // NEW: RAG Mode
+    ragMode: string;
+    setRagMode: (mode: string) => void;
 }
 
 export function OrchestratorHeader({
@@ -24,7 +27,9 @@ export function OrchestratorHeader({
     selectedModel,
     setSelectedModel,
     systemMode,
-    setSystemMode
+    setSystemMode,
+    ragMode,
+    setRagMode
 }: OrchestratorHeaderProps) {
     return (
         <header className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#16161a] shrink-0 z-10">
@@ -89,6 +94,22 @@ export function OrchestratorHeader({
                             <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (Latest)</option>
                             <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
                         </optgroup>
+                    </select>
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
+                        <ArrowDown className="w-3 h-3" />
+                    </div>
+                </div>
+
+                {/* NEW: RAG Mode Selector */}
+                <div className="relative group">
+                    <select
+                        value={ragMode}
+                        onChange={(e) => setRagMode(e.target.value)}
+                        className="bg-[#0a0a0c] border border-gray-700 text-xs rounded px-2 py-1 outline-none text-gray-300 hover:border-purple-500 transition-colors cursor-pointer appearance-none pr-6"
+                        title="RAG Mode: How PDF content is retrieved"
+                    >
+                        <option value="injection">💉 Injection</option>
+                        <option value="semantic">🔍 Semantic RAG</option>
                     </select>
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
                         <ArrowDown className="w-3 h-3" />

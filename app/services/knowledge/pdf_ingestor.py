@@ -41,7 +41,8 @@ class PDFIngestor:
         url: str, 
         job_id: str, 
         scope: str = "global", 
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        rag_mode: str = "injection"  # NEW: "injection" or "semantic"
     ) -> Dict[str, Any]:
         """
         Downloads a PDF from URL and creates knowledge artifacts.
@@ -51,6 +52,7 @@ class PDFIngestor:
             job_id: Unique identifier for this job
             scope: "global" or "session"
             session_id: Required if scope is "session"
+            rag_mode: "injection" (direct) or "semantic" (embeddings)
             
         Returns:
             Dict with status and context_id
@@ -61,6 +63,7 @@ class PDFIngestor:
             "start_time": datetime.utcnow().isoformat(),
             "scope": scope,
             "session_id": session_id,
+            "rag_mode": rag_mode,  # Track RAG mode in job
             "error": None
         }
 
@@ -102,12 +105,31 @@ class PDFIngestor:
                 session_id=session_id
             )
 
-            # 6. Mark as complete
+            # 6. Create vector embeddings if semantic RAG mode
+            if rag_mode == "semantic":
+                self.JOBS[job_id]["status"] = "EMBEDDING"
+                try:
+                    from app.services.knowledge.vector_store import vector_store
+                    num_chunks = vector_store.ingest_document(
+                        doc_id=context_id,
+                        text=text_content,
+                        metadata={
+                            "pdf_name": pdf_name,
+                            "session_id": session_id,
+                            "scope": scope
+                        }
+                    )
+                    print(f"🔍 [PDFIngestor] Created {num_chunks} semantic chunks")
+                except Exception as embed_err:
+                    print(f"⚠️ [PDFIngestor] Embedding warning: {embed_err}")
+                    # Continue even if embedding fails - still have full text
+
+            # 7. Mark as complete
             self.JOBS[job_id]["status"] = "COMPLETED"
             self.JOBS[job_id]["context_id"] = context_id
             
-            print(f"✅ [PDFIngestor] Successfully ingested: {pdf_name}")
-            return {"status": "success", "context_id": context_id, "name": pdf_name}
+            print(f"✅ [PDFIngestor] Successfully ingested: {pdf_name} (mode: {rag_mode})")
+            return {"status": "success", "context_id": context_id, "name": pdf_name, "rag_mode": rag_mode}
 
         except Exception as e:
             self.JOBS[job_id]["status"] = "FAILED"
