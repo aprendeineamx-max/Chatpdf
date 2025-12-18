@@ -117,19 +117,57 @@ def extract_page_query(query_text: str) -> int | None:
     return None
 
 def extract_page_content(full_content: str, page_num: int) -> str | None:
-    """Extracts specific page content using page markers."""
-    # Try different marker formats
-    patterns = [
-        rf'--- PAGE {page_num} ---\n(.*?)(?=--- PAGE \d+ ---|$)',
-        rf'=== PÁGINA {page_num} \|.*?===\n+(.*?)(?====+ PÁGINA \d+ ===|$)',
-        rf'PAGE {page_num}\n(.*?)(?=PAGE \d+|$)',
-    ]
+    """
+    Extracts specific page content using page markers.
+    Handles PDF page numbering offset by trying multiple strategies:
+    1. Exact page number
+    2. Page number +/- 1-2 (for minor offset)
+    3. Wide search for printed page number (±60 pages for major offset like cover pages)
+    """
     
-    for pattern in patterns:
-        match = re.search(pattern, full_content, re.DOTALL | re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
+    def try_extract(pn: int) -> str | None:
+        patterns = [
+            rf'--- PAGE {pn} ---\n(.*?)(?=--- PAGE \d+ ---|$)',
+            rf'=== PÁGINA {pn} \|.*?===\n+(.*?)(?====+ PÁGINA \d+ ===|$)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, full_content, re.DOTALL | re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
     
+    # Strategy 1: Try exact page number
+    result = try_extract(page_num)
+    if result:
+        print(f"📄 [Page Search] Found page {page_num} with exact match")
+        return result
+    
+    # Strategy 2: Try with small offset +/-1, +/-2
+    for offset in [1, -1, 2, -2]:
+        result = try_extract(page_num + offset)
+        if result:
+            print(f"📄 [Page Search] Found page {page_num} using offset {offset:+d}")
+            return result
+    
+    # Strategy 3: Wide search - look for page where physical number appears at end
+    # PDFs often have page numbers printed at bottom which appears at end of extracted text
+    # Search in a wide range to handle cover pages, TOC, etc.
+    for pn in range(max(1, page_num - 60), min(500, page_num + 60)):
+        content = try_extract(pn)
+        if content:
+            # Check last 30 chars for the printed page number
+            last_30 = content[-30:].strip()
+            # Match exact number at end (e.g., "...some text\n79" or "UNIDAD 1\n79")
+            if re.search(rf'\b{page_num}\s*$', last_30):
+                print(f"📄 [Page Search] Found physical page {page_num} at end of PAGE {pn}")
+                return content
+            # Also check start (some PDFs have page numbers at top)
+            first_30 = content[:30].strip()
+            if re.search(rf'^\s*{page_num}\b', first_30):
+                print(f"📄 [Page Search] Found physical page {page_num} at start of PAGE {pn}")
+                return content
+    
+    print(f"⚠️ [Page Search] Could not find page {page_num}")
     return None
 
 @app.post(f"{settings.API_V1_STR}/query")
@@ -301,14 +339,20 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         final_query += "\n\n" + "="*60 + "\n"
         final_query += "=== INSTRUCCIONES CRÍTICAS PARA DOCUMENTOS PDF ===\n"
         final_query += "="*60 + "\n"
-        final_query += "1. Si el usuario pregunta por una PÁGINA ESPECÍFICA (ej: 'página 79', 'page 79'):\n"
-        final_query += "   - BUSCA el marcador '===== CONTENIDO EXACTO DE LA PÁGINA X =====' si existe\n"
-        final_query += "   - O busca '--- PAGE X ---' en el contexto\n"
-        final_query += "   - El contenido de cada página está DESPUÉS del marcador y ANTES del siguiente\n"
-        final_query += "2. CITA el contenido EXACTO encontrado. NUNCA digas 'no tengo acceso' si el marcador existe.\n"
-        final_query += "3. Si la página solicitada NO existe en el contexto, indica claramente:\n"
-        final_query += "   'La página X no está disponible en el documento. Las páginas disponibles son: [rango]'\n"
-        final_query += "4. Para preguntas sobre páginas: PRIORIZA el contenido del marcador específico sobre resúmenes.\n"
+        final_query += "PARA PREGUNTAS SOBRE PÁGINAS ESPECÍFICAS (ej: 'página 79'):\n\n"
+        final_query += "1. BUSCA el número de página FÍSICA en el texto completo.\n"
+        final_query += "   - Los números de página impresos aparecen en el texto como '78', '79', '80', etc.\n"
+        final_query += "   - Generalmente aparecen AL FINAL de cada bloque de página, antes del siguiente contenido.\n"
+        final_query += "   - Patron típico: 'UNIDAD X\\n78' indica fin de página 78.\n\n"
+        final_query += "2. Para encontrar la PÁGINA 79 del libro:\n"
+        final_query += "   - Busca el número '79' que aparece solo en una línea dentro del texto.\n"
+        final_query += "   - El contenido de la página 79 está DESPUÉS del número '78' y ANTES/HASTA el número '79'.\n"
+        final_query += "   - O busca texto que rodea al número 79 impreso.\n\n"
+        final_query += "3. NO uses los marcadores '--- PAGE X ---' para páginas específicas.\n"
+        final_query += "   - Estos son índices internos de PyMuPDF, NO páginas físicas del libro.\n"
+        final_query += "   - La página física 79 puede estar en '--- PAGE 80 ---' o cualquier otro índice.\n\n"
+        final_query += "4. CITA el contenido EXACTO encontrado alrededor del número de página solicitado.\n"
+        final_query += "5. Si no encuentras el número de página en el texto, indícalo claramente.\n"
         final_query += "="*60 + "\n"
 
         if request.mode == "swarm":
