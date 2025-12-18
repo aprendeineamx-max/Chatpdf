@@ -274,23 +274,24 @@ class PDFIngestor:
             )
             db.add(context)
             
-            # Create artifact for the content
+            # Create artifact for the FULL content (no truncation)
+            # Store entire PDF text so agent has access to everything
             artifact = AtomicArtifact(
                 id=str(uuid.uuid4()),
                 context_id=context_id,
                 filename="pdf_content.txt",
-                content=content[:50000],  # Limit content size
+                content=content,  # [FIX] Store FULL content, no limit
                 local_path=pdf_path
             )
             db.add(artifact)
             
-            # Create a summary artifact (first 2000 chars)
-            summary = content[:2000] if len(content) > 2000 else content
+            # Create a summary artifact (first 5000 chars for overview)
+            summary = content[:5000] if len(content) > 5000 else content
             summary_artifact = AtomicArtifact(
                 id=str(uuid.uuid4()),
                 context_id=context_id,
                 filename="pdf_summary.txt",
-                content=f"PDF Summary for {pdf_name}:\n\n{summary}",
+                content=f"PDF Summary for {pdf_name} ({len(content)} caracteres totales):\n\n{summary}",
                 local_path=pdf_path
             )
             db.add(summary_artifact)

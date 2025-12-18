@@ -158,8 +158,10 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                         if art.filename == "pdf_summary.txt":
                             knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
                         elif art.filename == "pdf_content.txt":
-                            # Inject more content for better answers
-                            knowledge_context += f"--- CONTENIDO DEL PDF ({len(art.content)} chars total) ---\n{art.content[:15000]}\n\n"
+                            # [FIX] Inject MUCH more content - 200k chars allows ~300 pages
+                            # LLM context windows are typically 100k+ tokens now
+                            content_to_inject = art.content[:200000] if len(art.content) > 200000 else art.content
+                            knowledge_context += f"--- CONTENIDO COMPLETO DEL PDF ({len(art.content)} chars) ---\n{content_to_inject}\n\n"
         finally:
             db.close()
         
