@@ -108,38 +108,58 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         # 2. Execute Logic
         
-        # [NEW] REAL-TIME FILE SYSTEM ACCESS (Agent Mode)
-        # Replaces static DB artifacts with live disk read
-        from app.services.knowledge.realtime import realtime_knowledge
-        
-        knowledge_context, target_repo = realtime_knowledge.get_file_context(request.query_text, request.repo_context)
-        
-        # [NEW] PDF CONTEXT INJECTION
-        # Query PDF artifacts for this session or global scope
+        # [FIX] SESSION-ISOLATED KNOWLEDGE CONTEXT
+        # Only include repos and PDFs that belong to THIS session
+        # No global scope, no cross-session contamination
         from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
         db = SessionLocal()
+        
+        knowledge_context = ""
+        target_repo = None
+        
         try:
-            # Find contexts for this session or global
-            valid_contexts = db.query(AtomicContext).filter(
-                (AtomicContext.session_id == session_id) | (AtomicContext.scope == "global")
+            # Find contexts ONLY for this session (not global - each chat is isolated)
+            session_contexts = db.query(AtomicContext).filter(
+                AtomicContext.session_id == session_id
             ).all()
-            valid_context_ids = [c.id for c in valid_contexts]
             
-            if valid_context_ids:
-                # Fetch PDF artifacts
+            session_context_ids = [c.id for c in session_contexts]
+            session_repo_names = [c.folder_name.replace("REPO: ", "") for c in session_contexts 
+                                  if c.batch_id == "REPO_INGESTION"]
+            
+            # A. Inject REPO context only if this session has repos
+            if session_repo_names:
+                from app.services.knowledge.realtime import realtime_knowledge
+                
+                # Only use explicit repo context if it belongs to this session
+                explicit_repo = request.repo_context
+                if explicit_repo:
+                    explicit_clean = explicit_repo.replace("REPO: ", "")
+                    if explicit_clean not in session_repo_names:
+                        explicit_repo = None  # Don't use repos from other sessions
+                
+                # Get file context only for session repos
+                if explicit_repo or len(session_repo_names) == 1:
+                    repo_to_use = explicit_repo if explicit_repo else f"REPO: {session_repo_names[0]}"
+                    knowledge_context, target_repo = realtime_knowledge.get_file_context(
+                        request.query_text, repo_to_use
+                    )
+            
+            # B. Inject PDF context for session-specific PDFs
+            if session_context_ids:
                 pdf_artifacts = db.query(AtomicArtifact).filter(
                     AtomicArtifact.filename.in_(["pdf_content.txt", "pdf_summary.txt"]),
-                    AtomicArtifact.context_id.in_(valid_context_ids)
+                    AtomicArtifact.context_id.in_(session_context_ids)
                 ).all()
                 
                 if pdf_artifacts:
-                    knowledge_context += "\n\n=== INGESTED PDF DOCUMENTS ===\n"
+                    knowledge_context += "\n\n=== DOCUMENTOS PDF DE ESTA CONVERSACIÓN ===\n"
                     for art in pdf_artifacts:
                         if art.filename == "pdf_summary.txt":
-                            knowledge_context += f"--- PDF SUMMARY ---\n{art.content}\n\n"
+                            knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
                         elif art.filename == "pdf_content.txt":
-                            # Inject first 10000 chars to give good context
-                            knowledge_context += f"--- PDF CONTENT (Excerpt, {len(art.content)} chars total) ---\n{art.content[:10000]}\n\n"
+                            # Inject more content for better answers
+                            knowledge_context += f"--- CONTENIDO DEL PDF ({len(art.content)} chars total) ---\n{art.content[:15000]}\n\n"
         finally:
             db.close()
         

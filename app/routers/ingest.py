@@ -187,12 +187,45 @@ def list_ingested_repos(session_id: Optional[str] = None):
 @router.get("/files")
 def list_repo_files(repo_name: str, path: str = ""):
     """
-    Returns file structure for a specific repo and path.
+    Returns file structure for a specific repo or PDF.
+    For PDFs, returns artifacts from database instead of filesystem.
     """
     import os
     from app.services.knowledge.repo_ingestor import SHARED_REPOS_DIR
     
-    # Security check: prevent traversal
+    # [FIX] Handle PDFs - return their artifacts from DB
+    if repo_name.startswith("PDF:"):
+        from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
+        
+        pdf_name = repo_name.replace("PDF: ", "").strip()
+        db = SessionLocal()
+        try:
+            # Find the PDF context by folder_name
+            context = db.query(AtomicContext).filter(
+                AtomicContext.folder_name.like(f"%{pdf_name}%")
+            ).first()
+            
+            if not context:
+                return []  # Return empty instead of error
+            
+            # Get all artifacts for this PDF
+            artifacts = db.query(AtomicArtifact).filter(
+                AtomicArtifact.context_id == context.id
+            ).all()
+            
+            items = []
+            for art in artifacts:
+                items.append({
+                    "name": art.filename,
+                    "type": "file",
+                    "path": art.filename,
+                    "size": len(art.content) if art.content else 0
+                })
+            return items
+        finally:
+            db.close()
+    
+    # REPOS: Original filesystem logic
     safe_repo = repo_name.replace("..", "").replace("/", "").replace("\\", "")
     full_path = os.path.join(SHARED_REPOS_DIR, safe_repo, path.lstrip("/"))
     
@@ -221,11 +254,40 @@ def list_repo_files(repo_name: str, path: str = ""):
 @router.get("/content")
 def get_file_content(repo_name: str, path: str):
     """
-    Returns text content of a file.
+    Returns text content of a file (repo file or PDF artifact).
     """
     import os
     from app.services.knowledge.repo_ingestor import SHARED_REPOS_DIR
     
+    # [FIX] Handle PDF artifact content
+    if repo_name.startswith("PDF:"):
+        from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
+        
+        pdf_name = repo_name.replace("PDF: ", "").strip()
+        db = SessionLocal()
+        try:
+            # Find the PDF context
+            context = db.query(AtomicContext).filter(
+                AtomicContext.folder_name.like(f"%{pdf_name}%")
+            ).first()
+            
+            if not context:
+                raise HTTPException(status_code=404, detail="PDF context not found")
+            
+            # Get the specific artifact
+            artifact = db.query(AtomicArtifact).filter(
+                AtomicArtifact.context_id == context.id,
+                AtomicArtifact.filename == path
+            ).first()
+            
+            if not artifact:
+                raise HTTPException(status_code=404, detail="PDF artifact not found")
+            
+            return {"content": artifact.content}
+        finally:
+            db.close()
+    
+    # REPOS: Original filesystem logic
     safe_repo = repo_name.replace("..", "").replace("/", "").replace("\\", "")
     full_path = os.path.join(SHARED_REPOS_DIR, safe_repo, path.lstrip("/"))
     
