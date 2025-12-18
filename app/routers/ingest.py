@@ -62,8 +62,12 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     
     # Generate session ID if needed (same pattern as /repo)
     final_session_id = req.session_id
+    session_created = False
     if req.scope == "session" and not final_session_id:
-        final_session_id = str(uuid.uuid4())
+        # [FIX] Create the session in chat history so it appears in sidebar
+        from app.services.chat.history import chat_history
+        final_session_id = chat_history.create_session(title="PDF Knowledge")
+        session_created = True
     
     job_id = str(uuid.uuid4())
     
@@ -173,9 +177,17 @@ def list_ingested_repos(session_id: Optional[str] = None):
         if job_scope == "session" and job_sid != session_id:
             continue
         
-        # Extract name from URL
+        # [FIX] Extract name from URL - handle Google Drive '/view' suffix
         url = job.get("url", "")
-        pdf_name = url.split("/")[-1].split("?")[0] if "/" in url else "PDF"
+        pdf_name = "pdf"
+        if "/" in url:
+            potential_name = url.split("/")[-1].split("?")[0]
+            # Skip common URL endings that aren't real filenames
+            if potential_name in ["view", "preview", "download", ""]:
+                # Use the context_id if available, otherwise timestamp  
+                pdf_name = job.get("context_id", f"pdf_{jid[:8]}")
+            else:
+                pdf_name = potential_name
         
         active_list.append({
             "id": jid,
