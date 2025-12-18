@@ -96,6 +96,42 @@ class QueryRequest(BaseModel):
     repo_context: Optional[str] = None # [NEW] Active Repo from UI
     rag_mode: str = "injection"  # NEW: "injection" or "semantic"
 
+# ============================================================
+# PHASE 2: Intelligent Page Query Detection Functions
+# ============================================================
+import re
+
+def extract_page_query(query_text: str) -> int | None:
+    """Detects if user is asking for a specific page number."""
+    patterns = [
+        r'página\s*(\d+)',
+        r'pagina\s*(\d+)', 
+        r'page\s*(\d+)',
+        r'pag\.?\s*(\d+)',
+        r'p\.?\s*(\d+)',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, query_text.lower())
+        if match:
+            return int(match.group(1))
+    return None
+
+def extract_page_content(full_content: str, page_num: int) -> str | None:
+    """Extracts specific page content using page markers."""
+    # Try different marker formats
+    patterns = [
+        rf'--- PAGE {page_num} ---\n(.*?)(?=--- PAGE \d+ ---|$)',
+        rf'=== PÁGINA {page_num} \|.*?===\n+(.*?)(?====+ PÁGINA \d+ ===|$)',
+        rf'PAGE {page_num}\n(.*?)(?=PAGE \d+|$)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, full_content, re.DOTALL | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    
+    return None
+
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
     try:
@@ -164,6 +200,24 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                     if request.rag_mode == "semantic":
                         # SEMANTIC RAG: Retrieve relevant chunks
                         semantic_success = False
+                        
+                        # [PHASE 2] For page-specific queries in semantic mode, 
+                        # first inject the exact page content
+                        requested_page = extract_page_query(request.query_text)
+                        if requested_page:
+                            for art in pdf_artifacts:
+                                if art.filename == "pdf_content.txt":
+                                    page_content = extract_page_content(art.content, requested_page)
+                                    if page_content:
+                                        knowledge_context += f"\n\n{'='*60}\n"
+                                        knowledge_context += f"===== CONTENIDO EXACTO DE LA PÁGINA {requested_page} =====\n"
+                                        knowledge_context += f"{'='*60}\n\n"
+                                        knowledge_context += page_content
+                                        knowledge_context += f"\n\n{'='*60}\n"
+                                        knowledge_context += f"===== FIN DE LA PÁGINA {requested_page} =====\n"
+                                        knowledge_context += f"{'='*60}\n\n"
+                                        print(f"📄 [Semantic + Page Query] Injected specific content for page {requested_page}")
+                        
                         try:
                             from app.services.knowledge.vector_store import vector_store
                             
@@ -200,11 +254,30 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                     else:
                         # DIRECT INJECTION: Full content (default behavior)
                         rag_mode_used = "injection"
+                        
+                        # [PHASE 2] Detect if asking for specific page
+                        requested_page = extract_page_query(request.query_text)
+                        page_content_found = False
+                        
                         for art in pdf_artifacts:
                             if art.filename == "pdf_summary.txt":
                                 knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
                             elif art.filename == "pdf_content.txt":
-                                # Inject up to 200k chars
+                                # [PHASE 2] If asking for specific page, extract and inject it FIRST
+                                if requested_page:
+                                    page_content = extract_page_content(art.content, requested_page)
+                                    if page_content:
+                                        knowledge_context += f"\n\n{'='*60}\n"
+                                        knowledge_context += f"===== CONTENIDO EXACTO DE LA PÁGINA {requested_page} =====\n"
+                                        knowledge_context += f"{'='*60}\n\n"
+                                        knowledge_context += page_content
+                                        knowledge_context += f"\n\n{'='*60}\n"
+                                        knowledge_context += f"===== FIN DE LA PÁGINA {requested_page} =====\n"
+                                        knowledge_context += f"{'='*60}\n\n"
+                                        page_content_found = True
+                                        print(f"📄 [Page Query] Injected specific content for page {requested_page}")
+                                
+                                # Inject full context (up to 200k chars)
                                 content_to_inject = art.content[:200000] if len(art.content) > 200000 else art.content
                                 knowledge_context += f"--- CONTENIDO COMPLETO DEL PDF ({len(art.content)} chars) ---\n{content_to_inject}\n\n"
         finally:
@@ -223,6 +296,20 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         final_query += "*** END_WRITE ***\n"
         final_query += "IMPORTANTE: OBEDECE LA RUTA SOLICITADA EXACTAMENTE. Si piden en la raíz, usa 'archivo.txt', NO inventes carpetas (src, docs) si no se piden.\n"
         final_query += "Ejemplo: *** WRITE_FILE: utils/helper.js ***\nconsole.log('hola');\n*** END_WRITE ***\n"
+        
+        # [PHASE 1] INSTRUCCIONES CRÍTICAS PARA DOCUMENTOS PDF
+        final_query += "\n\n" + "="*60 + "\n"
+        final_query += "=== INSTRUCCIONES CRÍTICAS PARA DOCUMENTOS PDF ===\n"
+        final_query += "="*60 + "\n"
+        final_query += "1. Si el usuario pregunta por una PÁGINA ESPECÍFICA (ej: 'página 79', 'page 79'):\n"
+        final_query += "   - BUSCA el marcador '===== CONTENIDO EXACTO DE LA PÁGINA X =====' si existe\n"
+        final_query += "   - O busca '--- PAGE X ---' en el contexto\n"
+        final_query += "   - El contenido de cada página está DESPUÉS del marcador y ANTES del siguiente\n"
+        final_query += "2. CITA el contenido EXACTO encontrado. NUNCA digas 'no tengo acceso' si el marcador existe.\n"
+        final_query += "3. Si la página solicitada NO existe en el contexto, indica claramente:\n"
+        final_query += "   'La página X no está disponible en el documento. Las páginas disponibles son: [rango]'\n"
+        final_query += "4. Para preguntas sobre páginas: PRIORIZA el contenido del marcador específico sobre resúmenes.\n"
+        final_query += "="*60 + "\n"
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
