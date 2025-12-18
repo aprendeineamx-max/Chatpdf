@@ -117,6 +117,7 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         
         knowledge_context = ""
         target_repo = None
+        rag_mode_used = request.rag_mode  # Track actual mode used (may change on fallback)
         
         try:
             # Find contexts ONLY for this session (not global - each chat is isolated)
@@ -156,32 +157,49 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 if pdf_artifacts:
                     knowledge_context += "\n\n=== DOCUMENTOS PDF DE ESTA CONVERSACIÓN ===\n"
                     
-                    # DUAL-MODE RETRIEVAL
+                    # Track which mode was actually used (for frontend indicator)
+                    rag_mode_used = request.rag_mode
+                    
+                    # DUAL-MODE RETRIEVAL WITH AUTO-FALLBACK
                     if request.rag_mode == "semantic":
-                        # SEMANTIC RAG: Only retrieve relevant chunks
+                        # SEMANTIC RAG: Retrieve relevant chunks
+                        semantic_success = False
                         try:
                             from app.services.knowledge.vector_store import vector_store
                             
+                            all_chunks = []
                             for ctx_id in session_context_ids:
                                 relevant_chunks = vector_store.search(
                                     doc_id=ctx_id,
                                     query=request.query_text,
-                                    top_k=10  # Get 10 most relevant chunks
+                                    top_k=25  # [FIX] Increased from 10 to 25 for better coverage
                                 )
-                                if relevant_chunks:
-                                    knowledge_context += f"--- FRAGMENTOS RELEVANTES (Semantic RAG) ---\n"
-                                    knowledge_context += "\n---\n".join(relevant_chunks)
-                                    knowledge_context += "\n\n"
-                                    print(f"🔍 [Semantic RAG] Injected {len(relevant_chunks)} relevant chunks")
+                                all_chunks.extend(relevant_chunks)
+                            
+                            if all_chunks:
+                                knowledge_context += f"--- FRAGMENTOS RELEVANTES (Semantic RAG - {len(all_chunks)} chunks) ---\n"
+                                knowledge_context += "\n---\n".join(all_chunks)
+                                knowledge_context += "\n\n"
+                                print(f"🔍 [Semantic RAG] Injected {len(all_chunks)} relevant chunks")
+                                semantic_success = True
+                            else:
+                                print(f"⚠️ [Semantic RAG] No chunks found, falling back to injection")
+                                
                         except Exception as sem_err:
-                            print(f"⚠️ [Semantic RAG] Fallback to injection: {sem_err}")
-                            # Fallback to injection if semantic fails
+                            print(f"⚠️ [Semantic RAG] Error: {sem_err}, falling back to injection")
+                        
+                        # AUTO-FALLBACK: If semantic fails or returns nothing, use injection
+                        if not semantic_success:
+                            rag_mode_used = "injection (fallback)"
                             for art in pdf_artifacts:
                                 if art.filename == "pdf_content.txt":
-                                    knowledge_context += f"--- CONTENIDO DEL PDF ---\n{art.content[:200000]}\n\n"
+                                    content = art.content[:200000] if len(art.content) > 200000 else art.content
+                                    knowledge_context += f"--- CONTENIDO DEL PDF (Fallback Injection) ---\n{content}\n\n"
+                                    print(f"💉 [Fallback] Injected {len(content)} chars via injection fallback")
                     
                     else:
-                        # DIRECT INJECTION: Full content (existing behavior)
+                        # DIRECT INJECTION: Full content (default behavior)
+                        rag_mode_used = "injection"
                         for art in pdf_artifacts:
                             if art.filename == "pdf_summary.txt":
                                 knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
@@ -240,9 +258,10 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 sources_list
             )
     
-        # 4. Return result with Session ID
+        # 4. Return result with Session ID and RAG mode used
         if isinstance(response, dict):
             response["session_id"] = session_id
+            response["rag_mode_used"] = rag_mode_used  # NEW: For frontend indicator
             
         return response
 

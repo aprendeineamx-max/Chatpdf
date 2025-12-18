@@ -183,13 +183,25 @@ class PDFIngestor:
         parsed = urlparse(url)
         path = parsed.path
         
+        # [FIX] Handle Google Drive URLs: /file/d/{FILE_ID}/view
+        # The last segment "view" is not a filename, so we need special handling
+        if "drive.google.com" in url and "/file/d/" in url:
+            # Extract the file ID from the path
+            parts = path.split("/")
+            for i, part in enumerate(parts):
+                if part == "d" and i + 1 < len(parts):
+                    file_id = parts[i + 1]
+                    return f"pdf_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
         # Try to get filename from path
         if "/" in path:
             potential_name = path.split("/")[-1]
-            if potential_name and "." in potential_name:
-                # Remove extension and clean
-                name = potential_name.rsplit(".", 1)[0]
-                return self._sanitize_name(name)
+            # Skip common non-filename endings
+            if potential_name and potential_name not in ["view", "preview", "download", ""]:
+                if "." in potential_name:
+                    # Remove extension and clean
+                    name = potential_name.rsplit(".", 1)[0]
+                    return self._sanitize_name(name)
         
         # Try query parameters
         query = parse_qs(parsed.query)

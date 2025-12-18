@@ -206,12 +206,17 @@ export function useOrchestrator() {
 
             const finalProvider = data.metadata?.provider || selectedProvider;
             const finalModel = data.metadata?.model || selectedModel;
+            const ragModeUsed = data.rag_mode_used || ragMode;  // NEW: Get actual mode used
+
+            // Build model display with RAG mode indicator
+            const ragIndicator = ragModeUsed === "semantic" ? " 🔍" :
+                ragModeUsed === "injection (fallback)" ? " 💉⚡" : " 💉";
 
             const botMsg: Message = {
                 role: 'assistant',
                 content: data.answer || "I processed that but have no specific answer.",
                 sources: data.sources,
-                model: finalModel + (finalProvider && finalProvider !== "unknown" ? ` @ ${finalProvider}` : "")
+                model: finalModel + (finalProvider && finalProvider !== "unknown" ? ` @ ${finalProvider}` : "") + ragIndicator
             };
             setMessages(prev => [...prev, botMsg]);
 
