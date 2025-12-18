@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Github, FileText } from 'lucide-react';
+import { Github, FileText, Settings } from 'lucide-react';
 
 interface IngestModalProps {
     showIngestModal: boolean;
@@ -9,7 +9,7 @@ interface IngestModalProps {
     ingestScope: 'global' | 'session';
     setIngestScope: (scope: 'global' | 'session') => void;
     handleIngestSubmit: () => void;
-    handleIngestPDF?: () => void; // New handler for PDFs
+    handleIngestPDF?: (pageOffset?: number, enableOcr?: boolean) => void; // Updated handler
 }
 
 type SourceType = 'repo' | 'pdf';
@@ -25,12 +25,15 @@ export function IngestModal({
     handleIngestPDF
 }: IngestModalProps) {
     const [sourceType, setSourceType] = useState<SourceType>('repo');
+    const [pageOffset, setPageOffset] = useState<number>(0);    // NEW: Page offset
+    const [enableOcr, setEnableOcr] = useState<boolean>(false);  // NEW: OCR toggle
+    const [showAdvanced, setShowAdvanced] = useState<boolean>(false); // NEW: Advanced options
 
     if (!showIngestModal) return null;
 
     const handleSubmit = () => {
         if (sourceType === 'pdf' && handleIngestPDF) {
-            handleIngestPDF();
+            handleIngestPDF(pageOffset, enableOcr);
         } else {
             handleIngestSubmit();
         }
@@ -46,8 +49,8 @@ export function IngestModal({
                     <button
                         onClick={() => setSourceType('repo')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'repo'
-                                ? 'bg-purple-900/40 border-purple-500 text-purple-300'
-                                : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
+                            ? 'bg-purple-900/40 border-purple-500 text-purple-300'
+                            : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
                             }`}
                     >
                         <Github size={18} />
@@ -56,8 +59,8 @@ export function IngestModal({
                     <button
                         onClick={() => setSourceType('pdf')}
                         className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'pdf'
-                                ? 'bg-red-900/40 border-red-500 text-red-300'
-                                : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
+                            ? 'bg-red-900/40 border-red-500 text-red-300'
+                            : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
                             }`}
                     >
                         <FileText size={18} />
@@ -80,6 +83,51 @@ export function IngestModal({
                         ? "Paste a public GitHub repository URL"
                         : "Paste a direct PDF link, Google Drive, or Dropbox URL"}
                 </p>
+
+                {/* NEW: Advanced Options for PDF (Offset + OCR) */}
+                {sourceType === 'pdf' && (
+                    <div className="mb-4">
+                        <button
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300 mb-2"
+                        >
+                            <Settings size={14} />
+                            <span>{showAdvanced ? 'Hide' : 'Show'} Advanced Options</span>
+                        </button>
+
+                        {showAdvanced && (
+                            <div className="bg-[#0f0f13] border border-gray-700 rounded-lg p-3 space-y-3">
+                                {/* Page Offset */}
+                                <div className="flex items-center gap-3">
+                                    <label className="text-sm text-gray-400 w-24">Page Offset:</label>
+                                    <input
+                                        type="number"
+                                        className="w-20 bg-[#1a1a20] border border-gray-600 rounded px-2 py-1 text-white text-center"
+                                        value={pageOffset}
+                                        onChange={e => setPageOffset(parseInt(e.target.value) || 0)}
+                                    />
+                                    <span className="text-xs text-gray-500">
+                                        Adjust if page numbers don't match
+                                    </span>
+                                </div>
+
+                                {/* OCR Toggle */}
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={enableOcr}
+                                        onChange={e => setEnableOcr(e.target.checked)}
+                                        className="w-4 h-4 accent-purple-500"
+                                    />
+                                    <span className="text-sm text-gray-400">🔍 Enable OCR</span>
+                                    <span className="text-xs text-gray-500">
+                                        (for scanned PDFs)
+                                    </span>
+                                </label>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Scope Selector */}
                 <div className="flex gap-4 mb-6">

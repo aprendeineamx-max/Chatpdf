@@ -319,13 +319,15 @@ export function useOrchestrator() {
         }
     }
 
-    async function handleIngestPDF() {
+    async function handleIngestPDF(pageOffset: number = 0, enableOcr: boolean = false) {
         const url = ingestUrl.trim();
         if (!url) return;
         setShowIngestModal(false);
         setIngestUrl('');
         setActiveTab('knowledge');
-        setMessages(prev => [...prev, { role: 'system', content: `📄 PDF INGESTION INITIATED: ${url}` }]);
+        const ocrInfo = enableOcr ? ' (OCR enabled)' : '';
+        const offsetInfo = pageOffset !== 0 ? ` (offset: ${pageOffset})` : '';
+        setMessages(prev => [...prev, { role: 'system', content: `📄 PDF INGESTION INITIATED: ${url}${ocrInfo}${offsetInfo}` }]);
 
         try {
             const res = await fetch(`${API_URL}/api/v1/ingest/pdf`, {
@@ -335,7 +337,9 @@ export function useOrchestrator() {
                     url,
                     scope: ingestScope,
                     session_id: currentSessionId,
-                    rag_mode: ragMode // NEW: Pass RAG mode for embedding generation
+                    rag_mode: ragMode,
+                    page_offset: pageOffset,   // NEW: Pass page offset
+                    enable_ocr: enableOcr      // NEW: Pass OCR flag
                 })
             });
 

@@ -17,7 +17,9 @@ class PDFRequest(BaseModel):
     url: str
     scope: str = "global"
     session_id: Optional[str] = None
-    rag_mode: str = "injection"  # NEW: "injection" or "semantic"
+    rag_mode: str = "injection"  # "injection" or "semantic"
+    page_offset: int = 0         # NEW: Manual page offset correction
+    enable_ocr: bool = False     # NEW: Enable OCR for scanned PDFs
 
 
 @router.post("/repo")
@@ -71,14 +73,16 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     
     job_id = str(uuid.uuid4())
     
-    # Run in background (pass rag_mode for semantic embeddings)
+    # Run in background (pass rag_mode, page_offset, enable_ocr for semantic embeddings)
     background_tasks.add_task(
         pdf_ingestor.ingest_pdf_url, 
         req.url, 
         job_id, 
         req.scope, 
         final_session_id,
-        req.rag_mode  # NEW: pass RAG mode
+        req.rag_mode,
+        req.page_offset,    # NEW: Pass page offset
+        req.enable_ocr      # NEW: Pass OCR flag
     )
     
     return {

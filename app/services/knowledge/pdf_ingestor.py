@@ -12,8 +12,9 @@ import re
 import uuid
 import requests
 import fitz  # PyMuPDF
+import json
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from urllib.parse import urlparse, parse_qs
 
 from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
@@ -42,7 +43,9 @@ class PDFIngestor:
         job_id: str, 
         scope: str = "global", 
         session_id: Optional[str] = None,
-        rag_mode: str = "injection"  # NEW: "injection" or "semantic"
+        rag_mode: str = "injection",  # "injection" or "semantic"
+        page_offset: int = 0,         # Manual page offset correction
+        enable_ocr: bool = False      # Enable OCR for scanned PDFs
     ) -> Dict[str, Any]:
         """
         Downloads a PDF from URL and creates knowledge artifacts.
@@ -87,9 +90,23 @@ class PDFIngestor:
             if not success:
                 raise Exception("Failed to download PDF")
 
-            # 4. Extract text content
+            # 4. Extract text content with page mapping
             self.JOBS[job_id]["status"] = "EXTRACTING"
-            text_content = self._extract_text(pdf_path)
+            text_content, page_mapping = self._extract_text_with_mapping(pdf_path, page_offset)
+            
+            # 4.5 Apply OCR for page number detection if enabled
+            if enable_ocr:
+                self.JOBS[job_id]["status"] = "OCR_PROCESSING"
+                try:
+                    from app.services.knowledge.ocr_service import ocr_service
+                    ocr_mapping = ocr_service.extract_page_numbers_from_pdf(
+                        pdf_path, engine="hybrid", extract_areas="both"
+                    )
+                    # Merge OCR mapping with text-based mapping (OCR takes priority)
+                    page_mapping.update(ocr_mapping)
+                    print(f"🔍 [PDFIngestor] OCR detected {len(ocr_mapping)} page numbers")
+                except Exception as ocr_err:
+                    print(f"⚠️ [PDFIngestor] OCR warning: {ocr_err}")
             
             # Save extracted text
             with open(content_path, "w", encoding="utf-8") as f:
@@ -102,7 +119,8 @@ class PDFIngestor:
                 pdf_path=pdf_path,
                 content=text_content,
                 scope=scope,
-                session_id=session_id
+                session_id=session_id,
+                page_mapping=page_mapping  # NEW: Pass page mapping
             )
 
             # 6. Create vector embeddings if semantic RAG mode
@@ -259,27 +277,107 @@ class PDFIngestor:
     def _extract_text(self, pdf_path: str) -> str:
         """
         Extracts text content from PDF using PyMuPDF.
+        Legacy method - kept for backwards compatibility.
+        """
+        text_content, _ = self._extract_text_with_mapping(pdf_path, 0)
+        return text_content
+    
+    def _extract_text_with_mapping(self, pdf_path: str, page_offset: int = 0) -> Tuple[str, Dict[int, int]]:
+        """
+        Extracts text content from PDF and creates page number mapping.
+        
+        Args:
+            pdf_path: Path to the PDF file
+            page_offset: Manual offset to apply to page numbers
+        
+        Returns:
+            Tuple of (text_content, page_mapping)
+            page_mapping: {physical_page_number: pymupdf_index}
         """
         text_parts = []
+        page_mapping: Dict[int, int] = {}
         
         try:
             doc = fitz.open(pdf_path)
+            total_pages = len(doc)
             
             for page_num, page in enumerate(doc, 1):
                 page_text = page.get_text("text")
+                
                 if page_text.strip():
-                    text_parts.append(f"--- PAGE {page_num} ---\n{page_text}")
+                    # Detect physical page number in text
+                    physical_num = self._detect_page_number(page_text, page_num)
+                    
+                    # Apply manual offset if provided
+                    if page_offset != 0:
+                        adjusted_num = page_num + page_offset
+                        if adjusted_num > 0:
+                            page_mapping[adjusted_num] = page_num
+                    elif physical_num:
+                        page_mapping[physical_num] = page_num
+                    
+                    # Create page marker with both indices
+                    physical_info = f" (PHYSICAL: {physical_num})" if physical_num else ""
+                    text_parts.append(f"--- PAGE {page_num}{physical_info} ---\n{page_text}")
             
             doc.close()
             
             if not text_parts:
-                return "[No extractable text found in PDF - may be image-based]"
+                return "[No extractable text found in PDF - may be image-based]", {}
             
-            return "\n\n".join(text_parts)
+            print(f"📄 [PDFIngestor] Extracted {len(text_parts)} pages, mapped {len(page_mapping)} physical numbers")
+            return "\n\n".join(text_parts), page_mapping
             
         except Exception as e:
             print(f"❌ Text extraction error: {e}")
-            return f"[Error extracting text: {e}]"
+            return f"[Error extracting text: {e}]", {}
+    
+    def _detect_page_number(self, page_text: str, pymupdf_index: int) -> Optional[int]:
+        """
+        Tries to detect physical page number from page text content.
+        Looks for standalone numbers in footers/headers.
+        
+        Args:
+            page_text: Text content of the page
+            pymupdf_index: The PyMuPDF page index (for reference)
+        
+        Returns:
+            Detected physical page number or None
+        """
+        if not page_text:
+            return None
+        
+        # Pattern 1: Number at end of page (footer) - most common
+        last_100 = page_text[-100:].strip() if len(page_text) > 100 else page_text.strip()
+        match = re.search(r'\b(\d{1,3})\s*$', last_100)
+        if match:
+            num = int(match.group(1))
+            # Validate: should be a reasonable page number
+            if 1 <= num <= 999:
+                return num
+        
+        # Pattern 2: Number at start of page (header)
+        first_50 = page_text[:50].strip()
+        match = re.search(r'^\s*(\d{1,3})\b', first_50)
+        if match:
+            num = int(match.group(1))
+            if 1 <= num <= 999:
+                return num
+        
+        # Pattern 3: "Página X" or "- X -" patterns
+        patterns = [
+            r'[Pp][aá]gina\s*(\d{1,3})',
+            r'[Pp]age\s*(\d{1,3})',
+            r'-\s*(\d{1,3})\s*-',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, page_text[-200:] if len(page_text) > 200 else page_text)
+            if match:
+                num = int(match.group(1))
+                if 1 <= num <= 999:
+                    return num
+        
+        return None
 
     def _create_db_entries(
         self, 
@@ -287,7 +385,8 @@ class PDFIngestor:
         pdf_path: str, 
         content: str, 
         scope: str, 
-        session_id: Optional[str]
+        session_id: Optional[str],
+        page_mapping: Dict[int, int] = None  # NEW: Physical page -> PyMuPDF index
     ) -> str:
         """
         Creates AtomicContext and AtomicArtifact entries in the database.
@@ -329,6 +428,18 @@ class PDFIngestor:
                 local_path=pdf_path
             )
             db.add(summary_artifact)
+            
+            # NEW: Create page mapping artifact if available
+            if page_mapping:
+                mapping_artifact = AtomicArtifact(
+                    id=str(uuid.uuid4()),
+                    context_id=context_id,
+                    filename="page_mapping.json",
+                    content=json.dumps(page_mapping, indent=2),
+                    local_path=pdf_path
+                )
+                db.add(mapping_artifact)
+                print(f"📄 [PDFIngestor] Created page mapping with {len(page_mapping)} entries")
             
             db.commit()
             return context_id

@@ -116,17 +116,19 @@ def extract_page_query(query_text: str) -> int | None:
             return int(match.group(1))
     return None
 
-def extract_page_content(full_content: str, page_num: int) -> str | None:
+def extract_page_content(full_content: str, page_num: int, page_mapping: dict = None) -> str | None:
     """
     Extracts specific page content using page markers.
     Handles PDF page numbering offset by trying multiple strategies:
+    0. Use page_mapping if available (maps physical page -> PyMuPDF index)
     1. Exact page number
     2. Page number +/- 1-2 (for minor offset)
-    3. Wide search for printed page number (±60 pages for major offset like cover pages)
+    3. Wide search for printed page number (±60 pages for major offset)
     """
     
     def try_extract(pn: int) -> str | None:
         patterns = [
+            rf'--- PAGE {pn}(?: \(PHYSICAL: \d+\))? ---\n(.*?)(?=--- PAGE \d+ ---|$)',
             rf'--- PAGE {pn} ---\n(.*?)(?=--- PAGE \d+ ---|$)',
             rf'=== PÁGINA {pn} \|.*?===\n+(.*?)(?====+ PÁGINA \d+ ===|$)',
         ]
@@ -135,6 +137,24 @@ def extract_page_content(full_content: str, page_num: int) -> str | None:
             if match:
                 return match.group(1).strip()
         return None
+    
+    # Strategy 0: Use page mapping if available (highest priority)
+    if page_mapping:
+        # page_mapping keys might be strings (from JSON) - convert
+        str_key = str(page_num)
+        if str_key in page_mapping:
+            actual_index = page_mapping[str_key]
+            result = try_extract(int(actual_index))
+            if result:
+                print(f"📄 [Page Mapping] Physical page {page_num} → PyMuPDF index {actual_index}")
+                return result
+        # Also try int key
+        if page_num in page_mapping:
+            actual_index = page_mapping[page_num]
+            result = try_extract(int(actual_index))
+            if result:
+                print(f"📄 [Page Mapping] Physical page {page_num} → PyMuPDF index {actual_index}")
+                return result
     
     # Strategy 1: Try exact page number
     result = try_extract(page_num)
@@ -150,18 +170,13 @@ def extract_page_content(full_content: str, page_num: int) -> str | None:
             return result
     
     # Strategy 3: Wide search - look for page where physical number appears at end
-    # PDFs often have page numbers printed at bottom which appears at end of extracted text
-    # Search in a wide range to handle cover pages, TOC, etc.
     for pn in range(max(1, page_num - 60), min(500, page_num + 60)):
         content = try_extract(pn)
         if content:
-            # Check last 30 chars for the printed page number
             last_30 = content[-30:].strip()
-            # Match exact number at end (e.g., "...some text\n79" or "UNIDAD 1\n79")
             if re.search(rf'\b{page_num}\s*$', last_30):
                 print(f"📄 [Page Search] Found physical page {page_num} at end of PAGE {pn}")
                 return content
-            # Also check start (some PDFs have page numbers at top)
             first_30 = content[:30].strip()
             if re.search(rf'^\s*{page_num}\b', first_30):
                 print(f"📄 [Page Search] Found physical page {page_num} at start of PAGE {pn}")
@@ -297,13 +312,24 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                         requested_page = extract_page_query(request.query_text)
                         page_content_found = False
                         
+                        # Load page mapping if available
+                        page_mapping = None
+                        for art in pdf_artifacts:
+                            if art.filename == "page_mapping.json":
+                                try:
+                                    import json
+                                    page_mapping = json.loads(art.content)
+                                    print(f"📄 [Page Mapping] Loaded mapping with {len(page_mapping)} entries")
+                                except:
+                                    pass
+                        
                         for art in pdf_artifacts:
                             if art.filename == "pdf_summary.txt":
                                 knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
                             elif art.filename == "pdf_content.txt":
                                 # [PHASE 2] If asking for specific page, extract and inject it FIRST
                                 if requested_page:
-                                    page_content = extract_page_content(art.content, requested_page)
+                                    page_content = extract_page_content(art.content, requested_page, page_mapping)
                                     if page_content:
                                         knowledge_context += f"\n\n{'='*60}\n"
                                         knowledge_context += f"===== CONTENIDO EXACTO DE LA PÁGINA {requested_page} =====\n"
