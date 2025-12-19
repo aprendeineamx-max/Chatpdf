@@ -1,5 +1,5 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 230, in query_document
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 243, in query_document
     session_context_ids = [c.id for c in session_contexts]
                                          ^^^^^^^^^^^^^^^^
 NameError: name 'session_contexts' is not defined

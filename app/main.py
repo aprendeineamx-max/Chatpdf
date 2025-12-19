@@ -238,6 +238,15 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         try:
             # CRITICAL: Detect Page Navigation Intent EARLY
             requested_page = extract_page_query(request.query_text)
+
+            # [FIX] Define session_contexts by querying DB (Session OR Global)
+            from sqlalchemy import or_
+            session_contexts = db.query(AtomicContext).filter(
+                or_(
+                    AtomicContext.session_id == session_id,
+                    AtomicContext.scope == "global"
+                )
+            ).all()
             
             # SESSION CONTEXT IDS
             session_context_ids = [c.id for c in session_contexts]
