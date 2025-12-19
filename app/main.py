@@ -196,6 +196,20 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         if not session_id:
             session_id = chat_history.create_session(title=request.query_text[:30])
         
+        # [NEW] Get conversation history for this session
+        history_messages = chat_history.get_session_history(session_id)
+        conversation_history = ""
+        if history_messages:
+            # Limit to last 20 messages to stay within token limits
+            recent_messages = history_messages[-20:]
+            conversation_history = "\n=== HISTORIAL DE CONVERSACIÓN ===\n"
+            for msg in recent_messages:
+                role_label = "USUARIO" if msg.role == "user" else "ASISTENTE"
+                # Truncate long messages to save tokens
+                content = msg.content[:1000] + "..." if len(msg.content) > 1000 else msg.content
+                conversation_history += f"{role_label}: {content}\n\n"
+            conversation_history += "=== FIN DEL HISTORIAL ===\n\n"
+        
         # 2. Execute Logic
         
         # [FIX] SESSION-ISOLATED KNOWLEDGE CONTEXT
@@ -349,8 +363,8 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         finally:
             db.close()
         
-        # Prepend context to query
-        final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
+        # Prepend context and history to query
+        final_query = f"{request.query_text}\n\n{conversation_history}CONTEXT:\n{knowledge_context}"
         
         # [IMPROVED] CONTEXT-AWARE SYSTEM PROMPT
         # Adapts based on what content is available in this session
