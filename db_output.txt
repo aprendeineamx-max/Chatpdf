@@ -1,0 +1,35 @@
+Total contexts: 9
+----------------------------------------------------------------------------------------------------
+1631060c-9d3 | PDF: pdf_20251217_171840            | scope=session  | session=7dad3269 | batch=pdf-20251217
+b789a406-38c | PDF: pdf_20251217_203158            | scope=session  | session=3b8f668c | batch=pdf-20251217
+e62206bb-718 | PDF: pdf_20251218_053353            | scope=session  | session=8bf90b37 | batch=pdf-20251218
+1a5dac87-068 | PDF: pdf_20251218_065347            | scope=session  | session=440ab84f | batch=pdf-20251218
+51961303-231 | PDF: pdf_20251218_072429            | scope=session  | session=0611789e | batch=pdf-20251218
+0af751b6-e34 | PDF: pdf_20251218_082541            | scope=session  | session=37cd538f | batch=pdf-20251218
+f237b351-df2 | PDF: pdf_20251218_085106            | scope=session  | session=7ec6729e | batch=pdf-20251218
+aac5228a-d87 | PDF: compressed.tracemonkey-pldi-09 | scope=global   | session=None     | batch=pdf-20251218
+810bb568-6ce | PDF: pdf_20251218_173130            | scope=session  | session=cc6ba074 | batch=pdf-20251218
+
+
+Artifacts:
+----------------------------------------------------------------------------------------------------
+pdf_content.txt           | context=1631060c-9d3 | size=50000
+pdf_summary.txt           | context=1631060c-9d3 | size=2038
+pdf_content.txt           | context=b789a406-38c | size=50000
+pdf_summary.txt           | context=b789a406-38c | size=2038
+pdf_content.txt           | context=e62206bb-718 | size=315809
+pdf_summary.txt           | context=e62206bb-718 | size=5066
+pdf_content.txt           | context=1a5dac87-068 | size=315809
+pdf_summary.txt           | context=1a5dac87-068 | size=5066
+pdf_content.txt           | context=51961303-231 | size=315809
+pdf_summary.txt           | context=51961303-231 | size=5066
+pdf_content.txt           | context=0af751b6-e34 | size=315809
+pdf_summary.txt           | context=0af751b6-e34 | size=5066
+pdf_content.txt           | context=f237b351-df2 | size=315809
+pdf_summary.txt           | context=f237b351-df2 | size=5066
+pdf_content.txt           | context=aac5228a-d87 | size=82930
+pdf_summary.txt           | context=aac5228a-d87 | size=5076
+page_mapping.json         | context=aac5228a-d87 | size=23
+pdf_content.txt           | context=810bb568-6ce | size=316208
+pdf_summary.txt           | context=810bb568-6ce | size=5066
+page_mapping.json         | context=810bb568-6ce | size=320

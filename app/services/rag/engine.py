@@ -137,12 +137,12 @@ class RAGService:
         url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         
-        # [FIX] System Prompt for Language and Behavior
+        # Context-aware system prompt - don't mention WRITE_FILE for PDF-only chats
         system_instruction = (
-            "Eres Genesis, un arquitecto de software experto. "
+            "Eres Genesis, un asistente experto y conversacional. "
             "IDIOMA: RESPONDE SIEMPRE EN ESPAÑOL. "
-            "Tienes capacidad de crear y editar archivos usando el formato: "
-            "*** WRITE_FILE: <path> ***\n<content>\n*** END_WRITE ***"
+            "Si el usuario te proporciona contenido de un documento o PDF, analízalo cuidadosamente y responde basándote en ese contenido. "
+            "Mantén el contexto de la conversación y recuerda lo que se ha discutido anteriormente."
         )
 
         data = {
@@ -171,12 +171,12 @@ class RAGService:
         url = "https://api.sambanova.ai/v1/chat/completions"
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         
-        # [FIX] System Prompt for Language and Behavior
+        # Context-aware system prompt - don't mention WRITE_FILE for PDF-only chats
         system_instruction = (
-            "Eres Genesis, un arquitecto de software experto. "
+            "Eres Genesis, un asistente experto y conversacional. "
             "IDIOMA: RESPONDE SIEMPRE EN ESPAÑOL. "
-            "Tienes capacidad de crear y editar archivos usando el formato: "
-            "*** WRITE_FILE: <path> ***\n<content>\n*** END_WRITE ***"
+            "Si el usuario te proporciona contenido de un documento o PDF, analízalo cuidadosamente y responde basándote en ese contenido. "
+            "Mantén el contexto de la conversación y recuerda lo que se ha discutido anteriormente."
         )
         
         data = {

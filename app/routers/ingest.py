@@ -120,12 +120,12 @@ def list_ingested_repos(session_id: Optional[str] = None):
             )
         ).all()
         
-        # In-memory filter for complex OR logic (SQLite/SQLAlchemy simple fallback)
+        # In-memory filter: Only show PDFs from THIS session in the KNOWLEDGE panel
+        # Global PDFs are still available for queries (see main.py) but don't clutter UI
         filtered_contexts = []
         for ctx in contexts:
-            if ctx.scope == "global":
-                filtered_contexts.append(ctx)
-            elif ctx.scope == "session" and ctx.session_id == session_id:
+            # Only include session-specific PDFs in the display
+            if ctx.scope == "session" and ctx.session_id == session_id:
                 filtered_contexts.append(ctx)
         
         completed = [
