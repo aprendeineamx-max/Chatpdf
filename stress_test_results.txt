@@ -1,0 +1,80 @@
+[18:58:18] 
+======================================================================
+[18:58:18] 🔥 COMPREHENSIVE STRESS TEST SUITE
+[18:58:18] ======================================================================
+
+[18:58:18] 
+--- PHASE 1: Server Health (10 iterations) ---
+[18:58:18] ✅ PASS: Health Check 1/10
+[18:58:18]        Backend:200 Frontend:200
+[18:58:22] ✅ PASS: Health Check 10/10
+[18:58:22]        Backend:200 Frontend:200
+[18:58:22] 
+--- PHASE 2: Session Isolation (5 sessions) ---
+[18:58:22] ✅ PASS: Session 1 Isolation
+[18:58:22]        Items: 0
+[18:58:22] ✅ PASS: Session 2 Isolation
+[18:58:22]        Items: 0
+[18:58:22] ✅ PASS: Session 3 Isolation
+[18:58:22]        Items: 0
+[18:58:22] ✅ PASS: Session 4 Isolation
+[18:58:22]        Items: 0
+[18:58:22] ✅ PASS: Session 5 Isolation
+[18:58:22]        Items: 0
+[18:58:22] 
+--- PHASE 3: Query Response Quality (5 iterations) ---
+[18:58:34] ✅ PASS: Query 1 No WRITE_FILE
+[18:58:34]        Query: '¿Qué sabes hacer?...' Answer: He leído el contexto del código proporcionado, que parece ser un documento PDF s...
+[18:58:40] ✅ PASS: Query 2 No WRITE_FILE
+[18:58:40]        Query: 'Hola, ¿cómo estás?...' Answer: Hola, estoy aquí para ayudarte. ¿En qué puedo asistirte con respecto al document...
+[18:58:47] ✅ PASS: Query 3 No WRITE_FILE
+[18:58:47]        Query: 'Explain your capabilities...' Answer: Entiendo las instrucciones. Estoy listo para procesar el contenido del PDF y res...
+[18:58:54] ✅ PASS: Query 4 No WRITE_FILE
+[18:58:54]        Query: '¿Cuál es tu función?...' Answer: Mi función es analizar y responder a preguntas y solicitudes relacionadas con el...
+[18:59:00] ✅ PASS: Query 5 No WRITE_FILE
+[18:59:00]        Query: 'What can you help me with?...' Answer: He leído el contexto del código proporcionado, que parece ser un documento PDF s...
+[18:59:00] 
+--- PHASE 4: PDF Content Injection (3 queries) ---
+[18:59:07] ✅ PASS: PDF Content 1: What is TraceMonkey?...
+[18:59:07]        Found keywords: ['javascript', 'trace']
+[18:59:14] ✅ PASS: PDF Content 2: What is the main topic of...
+[18:59:14]        Found keywords: ['trace', 'javascript', 'compilation']
+[18:59:22] ✅ PASS: PDF Content 3: Explain the abstract of t...
+[18:59:22]        Found keywords: ['dynamic', 'language', 'javascript', 'trace']
+[18:59:22] 
+--- PHASE 5: Page Extraction (Pages 1-5) ---
+[18:59:30] ✅ PASS: Page 1 Extraction
+[18:59:30]        Keywords found: ['trace', 'javascript', 'dynamic']
+[18:59:40] ✅ PASS: Page 2 Extraction
+[18:59:40]        Keywords found: ['trace', 'tree', 'loop']
+[18:59:48] ✅ PASS: Page 3 Extraction
+[18:59:48]        Keywords found: ['lir', 'array', 'state']
+[18:59:57] ✅ PASS: Page 4 Extraction
+[18:59:57]        Keywords found: ['iteration', 'side exit', 'guard']
+[19:00:09] ✅ PASS: Page 5 Extraction
+[19:00:09]        Keywords found: ['trace']
+[19:00:09] 
+--- PHASE 6: PDF Ingestion API ---
+[19:00:10] ✅ PASS: PDF Ingestion API
+[19:00:10]        Status: 200
+[19:00:10] 
+--- PHASE 7: Concurrent Requests (10 parallel) ---
+[19:00:14] ✅ PASS: Concurrent Requests
+[19:00:14]        10/10 succeeded
+[19:00:14] 
+--- PHASE 8: Chat Session Flow ---
+[19:00:22] ✅ PASS: Chat Flow: Initial message
+[19:00:29] ✅ PASS: Chat Flow: PDF query
+[19:00:29]        Contains 'javascript': True
+[19:00:29] 
+--- PHASE 9: Error Handling ---
+[19:00:29] ✅ PASS: Error: Invalid session
+[19:00:29]        Status: 200
+[19:00:35] ✅ PASS: Error: Empty query
+[19:00:35]        Status: 200
+[19:00:35] 
+======================================================================
+[19:00:35] 📊 FINAL RESULTS: 26/26 tests passed (100.0%)
+[19:00:35] ⏱️ Total time: 137.3 seconds
+[19:00:35] ======================================================================
+[19:00:35] 🎉 ALL TESTS PASSED! System is 100% functional.
