@@ -209,9 +209,14 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         rag_mode_used = request.rag_mode  # Track actual mode used (may change on fallback)
         
         try:
-            # Find contexts ONLY for this session (not global - each chat is isolated)
+            # Find contexts for this session AND global PDFs
+            # Global PDFs (scope="global") should be accessible from all sessions
+            from sqlalchemy import or_
             session_contexts = db.query(AtomicContext).filter(
-                AtomicContext.session_id == session_id
+                or_(
+                    AtomicContext.session_id == session_id,
+                    AtomicContext.scope == "global"  # Include global PDFs
+                )
             ).all()
             
             session_context_ids = [c.id for c in session_contexts]
@@ -236,10 +241,10 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                         request.query_text, repo_to_use
                     )
             
-            # B. Inject PDF context for session-specific PDFs
+            # B. Inject PDF context for session/global PDFs
             if session_context_ids:
                 pdf_artifacts = db.query(AtomicArtifact).filter(
-                    AtomicArtifact.filename.in_(["pdf_content.txt", "pdf_summary.txt"]),
+                    AtomicArtifact.filename.in_(["pdf_content.txt", "pdf_summary.txt", "page_mapping.json"]),
                     AtomicArtifact.context_id.in_(session_context_ids)
                 ).all()
                 
