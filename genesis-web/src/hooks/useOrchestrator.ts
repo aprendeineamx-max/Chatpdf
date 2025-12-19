@@ -172,6 +172,11 @@ export function useOrchestrator() {
         }
     }
 
+    const [activePdfUrl, setActivePdfUrl] = useState<string | null>(null);
+    const [pdfPage, setPdfPage] = useState<number>(1);
+
+    // ... (existing state) ...
+
     async function sendMessage() {
         if (!input.trim()) return;
 
@@ -193,7 +198,7 @@ export function useOrchestrator() {
                     model: selectedModel,
                     provider: selectedProvider,
                     repo_context: expandedRepo,
-                    rag_mode: ragMode // NEW: Pass RAG mode for semantic/injection choice
+                    rag_mode: ragMode
                 }),
             });
 
@@ -206,9 +211,20 @@ export function useOrchestrator() {
 
             const finalProvider = data.metadata?.provider || selectedProvider;
             const finalModel = data.metadata?.model || selectedModel;
-            const ragModeUsed = data.rag_mode_used || ragMode;  // NEW: Get actual mode used
+            const ragModeUsed = data.rag_mode_used || ragMode;
 
-            // Build model display with RAG mode indicator
+            // [NEW] PDF SYNC LOGIC
+            // Look for priority context marker in the answer or sources to determine page
+            // Or look for specific "page X" mentions in the AI answer if structured
+            // Simple RegEx on the answer for now: "PÁGINA (\d+)" inside context blocks or explicit AI mention
+            // Better: The backend injects "⚠️ CONTEXTO PRIORITARIO: PÁGINA {requested_page} ⚠️" into context
+            // But frontend receives the ANSWER. The answer might mention "En la página 79...".
+            // Let's use a regex on the answer to auto-scroll if AI explicitly cites a page number.
+            const pageMatch = data.answer?.match(/página\s+(\d+)/i);
+            if (pageMatch && pageMatch[1]) {
+                setPdfPage(parseInt(pageMatch[1]));
+            }
+
             const ragIndicator = ragModeUsed === "semantic" ? " 🔍" :
                 ragModeUsed === "injection (fallback)" ? " 💉⚡" : " 💉";
 
@@ -228,6 +244,7 @@ export function useOrchestrator() {
             setMessages(prev => [...prev, { role: 'system', content: `Error: ${msg}` }]);
         } finally { setLoading(false); }
     }
+
 
     // --- File Logic ---
     async function fetchFiles(repoName: string, path: string) {
@@ -355,6 +372,11 @@ export function useOrchestrator() {
                     loadSessions();
                 }
 
+                // [NEW] Set Active PDF
+                if (data.file_url) {
+                    setActivePdfUrl(data.file_url);
+                }
+
                 loadData(true, effectiveSessionId);
             } else {
                 throw new Error("PDF Ingestion failed");
@@ -373,6 +395,9 @@ export function useOrchestrator() {
         activeTab, setActiveTab, repos,
         expandedRepo, setExpandedRepo, repoFiles, selectedFile, setSelectedFile, isLoadingFiles,
         ingestUrl, setIngestUrl, ingestScope, setIngestScope, showIngestModal, setShowIngestModal,
+
+        // [NEW] PDF State
+        activePdfUrl, setActivePdfUrl, pdfPage, setPdfPage,
 
         // Editor State
         isEditing, setIsEditing, editorContent, setEditorContent, isSaving,

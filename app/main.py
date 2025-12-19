@@ -36,6 +36,13 @@ app.include_router(orchestrator_router)
 app.include_router(system_router)
 app.include_router(ingest_router)
 
+# [NEW] Mount Static Files for PDF Viewer
+from fastapi.staticfiles import StaticFiles
+import os
+
+os.makedirs("data/uploads", exist_ok=True)
+app.mount("/files", StaticFiles(directory="data/uploads"), name="files")
+
 @app.on_event("startup")
 async def startup_event():
     if settings.CORE_MODE == "LOCAL":
@@ -54,19 +61,25 @@ async def ingest_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
     """
     # job_id = str(uuid.uuid4())
     job_id = "all" # MVP: Force single index for Chat UI
-    temp_path = f"data/temp/{job_id}.pdf"
     
-    # Ensure temp dir exists
-    os.makedirs("data/temp", exist_ok=True)
+    # Save to PERSISTENT uploads directory (served at /files)
+    upload_dir = "data/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    file_path = f"{upload_dir}/{job_id}.pdf"
     
     # Save file
-    with open(temp_path, "wb") as buffer:
+    with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
     # Background Processing
-    background_tasks.add_task(process_job, temp_path, job_id)
+    background_tasks.add_task(process_job, file_path, job_id)
     
-    return {"job_id": job_id, "status": "processing_started"}
+    # Return URL for frontend
+    return {
+        "job_id": job_id, 
+        "status": "processing_started",
+        "file_url": f"http://127.0.0.1:8000/files/{job_id}.pdf"
+    }
 
 def process_job(file_path: str, job_id: str):
     """

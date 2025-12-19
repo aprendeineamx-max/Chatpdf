@@ -4,6 +4,8 @@ import { SidebarHistory } from './orchestrator/SidebarHistory';
 import { ChatArea } from './orchestrator/ChatArea';
 import { KnowledgePanel } from './orchestrator/KnowledgePanel';
 import { IngestModal } from './orchestrator/IngestModal';
+import { PDFViewer } from './orchestrator/PDFViewer';
+import { X } from 'lucide-react';
 import { FileEditorModal } from './orchestrator/FileEditorModal';
 
 // Hooks
@@ -19,6 +21,9 @@ export function Orchestrator() {
         activeTab, setActiveTab, repos,
         expandedRepo, setExpandedRepo, repoFiles, selectedFile, setSelectedFile, isLoadingFiles,
         ingestUrl, setIngestUrl, ingestScope, setIngestScope, showIngestModal, setShowIngestModal,
+
+        // [NEW] PDF State
+        activePdfUrl, setActivePdfUrl, pdfPage, setPdfPage,
 
         // Actions (Editor)
         isEditing, editorContent, isSaving, setEditorContent, setIsEditing, isLoadingContent,
@@ -65,19 +70,39 @@ export function Orchestrator() {
                     activeTab={activeTab}
                 />
 
-                <KnowledgePanel
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    tasks={tasks}
-                    repos={repos}
-                    expandedRepo={expandedRepo}
-                    setExpandedRepo={setExpandedRepo}
-                    repoFiles={repoFiles}
-                    isLoadingFiles={isLoadingFiles}
-                    fetchFiles={fetchFiles}
-                    fetchContent={fetchContent}
-                    setShowIngestModal={setShowIngestModal}
-                />
+                {activePdfUrl ? (
+                    <div className="w-1/2 flex flex-col border-l border-gray-800">
+                        {/* Close/Toggle Button Layer could go here */}
+                        <div className="flex-1 overflow-hidden relative">
+                            <button
+                                onClick={() => setActivePdfUrl(null)}
+                                className="absolute top-2 right-2 z-50 bg-black/50 hover:bg-red-900/80 text-white p-1 rounded-full"
+                                title="Close PDF View"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                            <PDFViewer
+                                pdfUrl={activePdfUrl}
+                                currentPage={pdfPage}
+                                onPageChange={setPdfPage}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <KnowledgePanel
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        tasks={tasks}
+                        repos={repos}
+                        expandedRepo={expandedRepo}
+                        setExpandedRepo={setExpandedRepo}
+                        repoFiles={repoFiles}
+                        isLoadingFiles={isLoadingFiles}
+                        fetchFiles={fetchFiles}
+                        fetchContent={fetchContent}
+                        setShowIngestModal={setShowIngestModal}
+                    />
+                )}
             </div>
 
             <IngestModal
