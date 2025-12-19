@@ -375,6 +375,17 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         final_query += "\n\nINSTRUCCIONES:\n"
         final_query += "IDIOMA: Responde SIEMPRE en ESPAÑOL.\n\n"
         
+        # [NEW] Conversation flow awareness
+        has_history = bool(history_messages) if 'history_messages' in locals() else False
+        if has_history:
+            final_query += "IMPORTANTE - FLUJO DE CONVERSACIÓN:\n"
+            final_query += "- Ya estás en medio de una conversación con el usuario.\n"
+            final_query += "- NO vuelvas a saludar ni a presentarte.\n"
+            final_query += "- NO digas '¡Hola!' ni '¡Hola de nuevo!' ni saludos similares.\n"
+            final_query += "- Continúa la conversación de manera NATURAL y FLUIDA.\n"
+            final_query += "- Responde DIRECTAMENTE a lo que el usuario pregunta.\n"
+            final_query += "- Usa el historial de arriba para dar contexto pero no lo repitas.\n\n"
+        
         if not has_content:
             # NO CONTENT - Friendly welcome prompt
             final_query += "Eres Genesis, un asistente amigable y experto.\n"
