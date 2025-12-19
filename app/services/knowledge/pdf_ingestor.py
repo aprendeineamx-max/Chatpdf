@@ -123,24 +123,24 @@ class PDFIngestor:
                 page_mapping=page_mapping  # NEW: Pass page mapping
             )
 
-            # 6. Create vector embeddings if semantic RAG mode
-            if rag_mode == "semantic":
-                self.JOBS[job_id]["status"] = "EMBEDDING"
-                try:
-                    from app.services.knowledge.vector_store import vector_store
-                    num_chunks = vector_store.ingest_document(
-                        doc_id=context_id,
-                        text=text_content,
-                        metadata={
-                            "pdf_name": pdf_name,
-                            "session_id": session_id,
-                            "scope": scope
-                        }
-                    )
-                    print(f"🔍 [PDFIngestor] Created {num_chunks} semantic chunks")
-                except Exception as embed_err:
-                    print(f"⚠️ [PDFIngestor] Embedding warning: {embed_err}")
-                    # Continue even if embedding fails - still have full text
+            # 6. ALWAYS create vector embeddings (enables mode switching at query time)
+            # Even if user selects "injection", we create embeddings so they can switch later
+            self.JOBS[job_id]["status"] = "EMBEDDING"
+            try:
+                from app.services.knowledge.vector_store import vector_store
+                num_chunks = vector_store.ingest_document(
+                    doc_id=context_id,
+                    text=text_content,
+                    metadata={
+                        "pdf_name": pdf_name,
+                        "session_id": session_id,
+                        "scope": scope
+                    }
+                )
+                print(f"🔍 [PDFIngestor] Created {num_chunks} semantic chunks for {pdf_name}")
+            except Exception as embed_err:
+                print(f"⚠️ [PDFIngestor] Embedding warning: {embed_err}")
+                # Continue even if embedding fails - still have full text for injection mode
 
             # 7. Mark as complete
             self.JOBS[job_id]["status"] = "COMPLETED"
