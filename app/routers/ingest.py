@@ -90,9 +90,9 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
         req.enable_ocr      # NEW: Pass OCR flag
     )
     
-    # [FIX] Return accessible FILE URL
+    # [FIX] Return accessible FILE URL using Job ID (Deterministic)
     # Static mount: /files/pdfs -> data/shared_pdfs
-    file_url = f"http://127.0.0.1:8000/files/pdfs/{predicted_name}/original.pdf"
+    file_url = f"http://127.0.0.1:8000/files/pdfs/{job_id}/original.pdf"
 
     return {
         "status": "started",

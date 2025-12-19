@@ -76,9 +76,12 @@ class PDFIngestor:
             if not download_url:
                 raise ValueError("Could not convert URL to downloadable format")
 
-            # 2. Extract filename from URL
+            # 2. Extract filename from URL (for display name only)
             pdf_name = self._extract_filename(url)
-            target_dir = os.path.join(SHARED_PDFS_DIR, pdf_name)
+            
+            # [FIX] Use Job ID for folder name to guarantee deterministic path matching
+            # logic in router. content.txt and original.pdf will live here.
+            target_dir = os.path.join(SHARED_PDFS_DIR, job_id)
             os.makedirs(target_dir, exist_ok=True)
             
             pdf_path = os.path.join(target_dir, "original.pdf")

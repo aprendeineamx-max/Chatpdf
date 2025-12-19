@@ -76,10 +76,10 @@ export function Orchestrator() {
                         <div className="flex-1 overflow-hidden relative">
                             <button
                                 onClick={() => setActivePdfUrl(null)}
-                                className="absolute top-2 right-2 z-50 bg-black/50 hover:bg-red-900/80 text-white p-1 rounded-full"
+                                className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110"
                                 title="Close PDF View"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-5 h-5" />
                             </button>
                             <PDFViewer
                                 pdfUrl={activePdfUrl}

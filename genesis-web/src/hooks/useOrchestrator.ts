@@ -90,6 +90,8 @@ export function useOrchestrator() {
         setCurrentSessionId(null);
         setTasks([]);
         setRepos([]); // [FIX] Clear knowledge panel for new chat
+        setActivePdfUrl(null); // [NEW] Close PDF Viewer
+        setPdfPage(1);
         loadSessions();
     }
 
