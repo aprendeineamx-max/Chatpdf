@@ -865,7 +865,7 @@ NANOJIT, is separate from the VM and can be used for other
 applications.
 
 
---- PAGE 8 ---
+--- PAGE 8 (PHYSICAL: 5) ---
 5.1
 Optimizations
 Because traces are in SSA form and have no join points or φ-
@@ -1134,7 +1134,7 @@ preemption becomes very slow. The implementation was also very
 complex, especially trying to restart execution after the preemption.
 
 
---- PAGE 10 ---
+--- PAGE 10 (PHYSICAL: 6) ---
 6.5
 Calling External Functions
 Like most interpreters, SpiderMonkey has a foreign function inter-
