@@ -1,9 +1,7 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 101, in query_document
-    from app.services.rag.engine import rag_service
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\rag\engine.py", line 142
-    api_key_g = settings.GROQ_API_KEY
-    ^^^^^^^^^
-IndentationError: expected an indented block after 'try' statement on line 140
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 230, in query_document
+    session_context_ids = [c.id for c in session_contexts]
+                                         ^^^^^^^^^^^^^^^^
+NameError: name 'session_contexts' is not defined
 
-Error: expected an indented block after 'try' statement on line 140 (engine.py, line 142)
+Error: name 'session_contexts' is not defined

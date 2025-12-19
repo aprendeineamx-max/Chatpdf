@@ -223,29 +223,24 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         rag_mode_used = request.rag_mode  # Track actual mode used (may change on fallback)
         
         try:
-            # CRITICAL: Each chat is a CLEAN SANDBOX
-            # Only include content that was explicitly ingested in THIS session
-            # NO global PDFs, NO cross-session contamination
-            session_contexts = db.query(AtomicContext).filter(
-                AtomicContext.session_id == session_id  # ONLY this session's content
-            ).all()
+            # CRITICAL: Detect Page Navigation Intent EARLY
+            requested_page = extract_page_query(request.query_text)
             
+            # SESSION CONTEXT IDS
             session_context_ids = [c.id for c in session_contexts]
             session_repo_names = [c.folder_name.replace("REPO: ", "") for c in session_contexts 
                                   if c.batch_id == "REPO_INGESTION"]
             
             # A. Inject REPO context only if this session has repos
+            # ... (Repo logic unchanged) ...
             if session_repo_names:
                 from app.services.knowledge.realtime import realtime_knowledge
-                
-                # Only use explicit repo context if it belongs to this session
                 explicit_repo = request.repo_context
                 if explicit_repo:
                     explicit_clean = explicit_repo.replace("REPO: ", "")
                     if explicit_clean not in session_repo_names:
-                        explicit_repo = None  # Don't use repos from other sessions
+                        explicit_repo = None
                 
-                # Get file context only for session repos
                 if explicit_repo or len(session_repo_names) == 1:
                     repo_to_use = explicit_repo if explicit_repo else f"REPO: {session_repo_names[0]}"
                     knowledge_context, target_repo = realtime_knowledge.get_file_context(
@@ -261,110 +256,91 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 
                 if pdf_artifacts:
                     knowledge_context += "\n\n=== DOCUMENTOS PDF DE ESTA CONVERSACIÓN ===\n"
-                    
-                    # Track which mode was actually used (for frontend indicator)
                     rag_mode_used = request.rag_mode
                     
-                    # DUAL-MODE RETRIEVAL WITH AUTO-FALLBACK
-                    if request.rag_mode == "semantic":
-                        # SEMANTIC RAG: Retrieve relevant chunks
-                        semantic_success = False
-                        
-                        # [PHASE 2] For page-specific queries in semantic mode, 
-                        # first inject the exact page content
-                        requested_page = extract_page_query(request.query_text)
-                        if requested_page:
-                            for art in pdf_artifacts:
-                                if art.filename == "pdf_content.txt":
-                                    page_content = extract_page_content(art.content, requested_page)
-                                    if page_content:
-                                        knowledge_context += f"\n\n{'='*60}\n"
-                                        knowledge_context += f"===== CONTENIDO EXACTO DE LA PÁGINA {requested_page} =====\n"
-                                        knowledge_context += f"{'='*60}\n\n"
-                                        knowledge_context += page_content
-                                        knowledge_context += f"\n\n{'='*60}\n"
-                                        knowledge_context += f"===== FIN DE LA PÁGINA {requested_page} =====\n"
-                                        knowledge_context += f"{'='*60}\n\n"
-                                        print(f"📄 [Semantic + Page Query] Injected specific content for page {requested_page}")
-                        
-                        try:
-                            from app.services.knowledge.vector_store import vector_store
-                            
-                            all_chunks = []
-                            for ctx_id in session_context_ids:
-                                relevant_chunks = vector_store.search(
-                                    doc_id=ctx_id,
-                                    query=request.query_text,
-                                    top_k=25  # [FIX] Increased from 10 to 25 for better coverage
-                                )
-                                all_chunks.extend(relevant_chunks)
-                            
-                            if all_chunks:
-                                knowledge_context += f"--- FRAGMENTOS RELEVANTES (Semantic RAG - {len(all_chunks)} chunks) ---\n"
-                                knowledge_context += "\n---\n".join(all_chunks)
-                                knowledge_context += "\n\n"
-                                print(f"🔍 [Semantic RAG] Injected {len(all_chunks)} relevant chunks")
-                                semantic_success = True
-                            else:
-                                print(f"⚠️ [Semantic RAG] No chunks found, falling back to injection")
-                                
-                        except Exception as sem_err:
-                            print(f"⚠️ [Semantic RAG] Error: {sem_err}, falling back to injection")
-                        
-                        # AUTO-FALLBACK: If semantic fails or returns nothing, use injection
-                        if not semantic_success:
-                            rag_mode_used = "injection (fallback)"
-                            for art in pdf_artifacts:
-                                if art.filename == "pdf_content.txt":
-                                    content = art.content[:200000] if len(art.content) > 200000 else art.content
-                                    knowledge_context += f"--- CONTENIDO DEL PDF (Fallback Injection) ---\n{content}\n\n"
-                                    print(f"💉 [Fallback] Injected {len(content)} chars via injection fallback")
-                    
-                    else:
-                        # DIRECT INJECTION: Full content (default behavior)
-                        rag_mode_used = "injection"
-                        
-                        # [PHASE 2] Detect if asking for specific page
-                        requested_page = extract_page_query(request.query_text)
-                        page_content_found = False
-                        
-                        # Load page mapping if available
+                    # 1. [PRIORITY] AUTOMATIC PAGE INJECTION
+                    # If user asks for a specific page, we inject it REGARDLESS of mode.
+                    # This ensures "Go to page 79" always has the content it needs.
+                    page_context_injected = False
+                    if requested_page:
+                        # Load page mapping
                         page_mapping = None
                         for art in pdf_artifacts:
                             if art.filename == "page_mapping.json":
                                 try:
                                     import json
                                     page_mapping = json.loads(art.content)
-                                    print(f"📄 [Page Mapping] Loaded mapping with {len(page_mapping)} entries")
                                 except:
                                     pass
                         
+                        # Extract and Inject
                         for art in pdf_artifacts:
-                            if art.filename == "pdf_summary.txt":
-                                knowledge_context += f"--- RESUMEN DEL PDF ---\n{art.content}\n\n"
-                            elif art.filename == "pdf_content.txt":
-                                # [PHASE 2] If asking for specific page, extract and inject it FIRST
-                                if requested_page:
-                                    page_content = extract_page_content(art.content, requested_page, page_mapping)
-                                    if page_content:
-                                        knowledge_context += f"\n\n{'='*60}\n"
-                                        knowledge_context += f"===== CONTENIDO EXACTO DE LA PÁGINA {requested_page} =====\n"
-                                        knowledge_context += f"{'='*60}\n\n"
-                                        knowledge_context += page_content
-                                        knowledge_context += f"\n\n{'='*60}\n"
-                                        knowledge_context += f"===== FIN DE LA PÁGINA {requested_page} =====\n"
-                                        knowledge_context += f"{'='*60}\n\n"
-                                        page_content_found = True
-                                        print(f"📄 [Page Query] Injected specific content for page {requested_page}")
-                                
-                                # Inject full context (up to 200k chars)
-                                content_to_inject = art.content[:200000] if len(art.content) > 200000 else art.content
-                                knowledge_context += f"--- CONTENIDO COMPLETO DEL PDF ({len(art.content)} chars) ---\n{content_to_inject}\n\n"
+                            if art.filename == "pdf_content.txt":
+                                page_content = extract_page_content(art.content, requested_page, page_mapping)
+                                if page_content:
+                                    knowledge_context += f"\n{'!'*40}\n"
+                                    knowledge_context += f"⚠️ CONTEXTO PRIORITARIO: PÁGINA {requested_page} ⚠️\n"
+                                    knowledge_context += f"{'!'*40}\n"
+                                    knowledge_context += page_content
+                                    knowledge_context += f"\n{'!'*40}\n"
+                                    knowledge_context += f"FIN DE CONTEXTO PRIORITARIO\n\n"
+                                    page_context_injected = True
+                                    print(f"🚀 [Nav Intent] Injected Page {requested_page} Content")
+
+                    # 2. ADDITIONAL RETRIEVAL (Semantic vs Injection)
+                    # Even if we found the page, we might want semantic search for concepts on that page
+                    if request.rag_mode == "semantic":
+                        semantic_success = False
+                        try:
+                            from app.services.knowledge.vector_store import vector_store
+                            all_chunks = []
+                            for ctx_id in session_context_ids:
+                                relevant_chunks = vector_store.search(
+                                    doc_id=ctx_id,
+                                    query=request.query_text,
+                                    top_k=15 # Slightly reduced k if we already have page content
+                                )
+                                all_chunks.extend(relevant_chunks)
+                            
+                            if all_chunks:
+                                knowledge_context += f"--- OTROS FRAGMENTOS RELEVANTES ({len(all_chunks)}) ---\n"
+                                knowledge_context += "\n---\n".join(all_chunks)
+                                semantic_success = True
+                        except Exception as sem_err:
+                            print(f"⚠️ [Semantic RAG] Error: {sem_err}")
+
+                        if not semantic_success and not page_context_injected:
+                            # Fallback only if we have NO content (neither page nor semantic)
+                            rag_mode_used = "injection (fallback)"
+                            for art in pdf_artifacts:
+                                if art.filename == "pdf_content.txt":
+                                    content = art.content[:100000] # Reduced size fallback
+                                    knowledge_context += f"--- CONTEXTO GENERAL (Fallback) ---\n{content}\n\n"
+                    
+                    else:
+                        # INJECTION MODE
+                        # Only inject full text if we didn't just inject a specific page (to save tokens)
+                        # OR if the user explicitly wants "injection" mode behavior (full context)
+                        # Let's inject a substantial summary/start if page focused found, or full if not.
+                        if not page_context_injected:
+                             for art in pdf_artifacts:
+                                if art.filename == "pdf_content.txt":
+                                    content = art.content[:200000]
+                                    knowledge_context += f"--- TEXTO COMPLETO DEL LIBRO ---\n{content}\n\n"
+
         finally:
             db.close()
         
         # Prepend context and history to query
-        final_query = f"{request.query_text}\n\n{conversation_history}CONTEXT:\n{knowledge_context}"
+        final_query = f"{request.query_text}\n\n{conversation_history}CONTEXT DISPONIBLE:\n{knowledge_context}"
+        
+        # 3. [NAVIGATION ENFORCEMENT] SYSTEM INSTRUCTION override
+        if requested_page:
+             final_query += f"\n\n🚨 INSTRUCCIÓN DE NAVEGACIÓN ACTIVA: 🚨\n"
+             final_query += f"El usuario está preguntando ESTRICTAMENTE sobre la PÁGINA {requested_page}.\n"
+             final_query += f"IGNORA cualquier conversación anterior sobre otras páginas.\n"
+             final_query += f"Usa EXCLUSIVAMENTE la información marcada bajo 'CONTEXTO PRIORITARIO: PÁGINA {requested_page}'.\n"
+             final_query += f"Si la información no está en esa sección, busca en los fragmentos relevantes, pero prioriza la página {requested_page}.\n"
         
         # [IMPROVED] CONTEXT-AWARE SYSTEM PROMPT
         # Adapts based on what content is available in this session
