@@ -1,0 +1,42 @@
+
+============================================================
+🧪 COMPREHENSIVE SYSTEM VERIFICATION
+============================================================
+
+--- Test 1: API Health Check ---
+✅ PASS: API /ingest/list responds
+       Status: 200
+
+--- Test 2: New Session Isolation ---
+✅ PASS: New session has empty KNOWLEDGE
+       Items: 0
+
+--- Test 3: Response Without WRITE_FILE ---
+✅ PASS: Response has NO WRITE_FILE
+       Answer preview: He leído el contexto del código proporcionado, que parece ser un documento PDF sobre un sistema de c...
+
+--- Test 4: PDF Content Injection (Global PDF) ---
+✅ PASS: Global PDF content injected
+       Answer preview: tracemonkey es un compilador dinámico de javascript que utiliza una técnica de compilación basada en trazas (trace-based compilation) para mejorar el ...
+
+--- Test 5: Page Extraction ---
+✅ PASS: Page 3 content extracted
+       Answer preview: el contenido de la página 3 es el siguiente:
+
+v0 := ld state[748]
+// load primes from the trace activation record
+st sp[0], v0
+// store primes to inte...
+
+--- Test 6: PDF Ingestion API ---
+✅ PASS: PDF ingestion API works
+       Status: 200
+
+--- Test 7: Chat Sessions API ---
+❌ FAIL: Chat sessions API works
+       Status: 404
+
+============================================================
+📊 RESULTS: 6/7 tests passed
+============================================================
+⚠️ Some tests failed. Review above for details.
