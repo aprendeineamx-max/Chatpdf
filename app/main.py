@@ -352,36 +352,59 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         # Prepend context to query
         final_query = f"{request.query_text}\n\nCONTEXT:\n{knowledge_context}"
         
-        # [NEW] Agentic Prompt Injection (Read + Write)
-        final_query += "\n\nINSTRUCCIONES: Eres un Agente de IA autónomo dentro del IDE.\n"
-        final_query += "1. LEE el contexto del código de arriba.\n"
-        final_query += "2. IDIOMA: Responde SIEMPRE en ESPAÑOL.\n"
-        final_query += "3. SI te piden crear/editar un archivo, USA ESTE FORMATO EXACTO:\n"
-        final_query += "*** WRITE_FILE: <ruta_relativa_desde_raiz_repo> ***\n"
-        final_query += "<contenido_del_codigo>\n"
-        final_query += "*** END_WRITE ***\n"
-        final_query += "IMPORTANTE: OBEDECE LA RUTA SOLICITADA EXACTAMENTE. Si piden en la raíz, usa 'archivo.txt', NO inventes carpetas (src, docs) si no se piden.\n"
-        final_query += "Ejemplo: *** WRITE_FILE: utils/helper.js ***\nconsole.log('hola');\n*** END_WRITE ***\n"
+        # [IMPROVED] CONTEXT-AWARE SYSTEM PROMPT
+        # Adapts based on what content is available in this session
+        has_pdfs = 'pdf_artifacts' in locals() and bool(pdf_artifacts)
+        has_repos = bool(session_repo_names) if 'session_repo_names' in locals() else False
+        has_content = has_pdfs or has_repos
         
-        # [PHASE 1] INSTRUCCIONES CRÍTICAS PARA DOCUMENTOS PDF
-        final_query += "\n\n" + "="*60 + "\n"
-        final_query += "=== INSTRUCCIONES CRÍTICAS PARA DOCUMENTOS PDF ===\n"
-        final_query += "="*60 + "\n"
-        final_query += "PARA PREGUNTAS SOBRE PÁGINAS ESPECÍFICAS (ej: 'página 79'):\n\n"
-        final_query += "1. BUSCA el número de página FÍSICA en el texto completo.\n"
-        final_query += "   - Los números de página impresos aparecen en el texto como '78', '79', '80', etc.\n"
-        final_query += "   - Generalmente aparecen AL FINAL de cada bloque de página, antes del siguiente contenido.\n"
-        final_query += "   - Patron típico: 'UNIDAD X\\n78' indica fin de página 78.\n\n"
-        final_query += "2. Para encontrar la PÁGINA 79 del libro:\n"
-        final_query += "   - Busca el número '79' que aparece solo en una línea dentro del texto.\n"
-        final_query += "   - El contenido de la página 79 está DESPUÉS del número '78' y ANTES/HASTA el número '79'.\n"
-        final_query += "   - O busca texto que rodea al número 79 impreso.\n\n"
-        final_query += "3. NO uses los marcadores '--- PAGE X ---' para páginas específicas.\n"
-        final_query += "   - Estos son índices internos de PyMuPDF, NO páginas físicas del libro.\n"
-        final_query += "   - La página física 79 puede estar en '--- PAGE 80 ---' o cualquier otro índice.\n\n"
-        final_query += "4. CITA el contenido EXACTO encontrado alrededor del número de página solicitado.\n"
-        final_query += "5. Si no encuentras el número de página en el texto, indícalo claramente.\n"
-        final_query += "="*60 + "\n"
+        final_query += "\n\nINSTRUCCIONES:\n"
+        final_query += "IDIOMA: Responde SIEMPRE en ESPAÑOL.\n\n"
+        
+        if not has_content:
+            # NO CONTENT - Friendly welcome prompt
+            final_query += "Eres Genesis, un asistente amigable y experto.\n"
+            final_query += "Actualmente NO hay contenido disponible en esta conversación.\n"
+            final_query += "Para poder ayudarte mejor, el usuario puede:\n"
+            final_query += "1. Ingestar un PDF usando el botón 'Ingest Repo' → 'PDF URL'\n"
+            final_query += "2. Ingestar un repositorio de código con 'Ingest Repo' → 'Repo URL'\n\n"
+            final_query += "Mientras tanto, puedo responder preguntas generales o ayudar con consultas básicas.\n"
+            final_query += "Sé amable, conversacional y útil.\n"
+        
+        elif has_pdfs and not has_repos:
+            # PDF ONLY - Document tutor prompt (NO WRITE_FILE)
+            final_query += "Eres Genesis, un tutor experto en documentos y libros.\n"
+            final_query += "Tienes acceso al contenido de documentos PDF que se te proporcionan arriba.\n\n"
+            final_query += "TU ROL:\n"
+            final_query += "- Analiza y explica el contenido del documento\n"
+            final_query += "- Responde preguntas sobre temas específicos\n"
+            final_query += "- Ayuda a entender conceptos complejos\n"
+            final_query += "- Cita textualmente cuando sea apropiado\n\n"
+            final_query += "PARA PÁGINAS ESPECÍFICAS:\n"
+            final_query += "- Busca el número de página física en el texto\n"
+            final_query += "- Los números aparecen al final de cada bloque de página\n"
+            final_query += "- Cita el contenido exacto de esa página\n\n"
+            final_query += "Sé didáctico, paciente y amable como un buen profesor.\n"
+        
+        elif has_repos and not has_pdfs:
+            # REPO ONLY - Code agent prompt (WITH WRITE_FILE)
+            final_query += "Eres Genesis, un arquitecto de software experto.\n"
+            final_query += "Tienes acceso al código del repositorio que se te proporciona arriba.\n\n"
+            final_query += "CAPACIDADES:\n"
+            final_query += "- Analizar y explicar código\n"
+            final_query += "- Sugerir mejoras y refactorizaciones\n"
+            final_query += "- Crear nuevos archivos de código\n\n"
+            final_query += "PARA CREAR/EDITAR ARCHIVOS, USA ESTE FORMATO:\n"
+            final_query += "*** WRITE_FILE: <ruta_relativa> ***\n"
+            final_query += "<contenido>\n"
+            final_query += "*** END_WRITE ***\n\n"
+        
+        else:
+            # BOTH PDF AND REPO - Full capabilities
+            final_query += "Eres Genesis, un asistente experto con acceso a documentos y código.\n"
+            final_query += "Puedes analizar PDFs y trabajar con repositorios de código.\n\n"
+            final_query += "PARA ARCHIVOS:\n"
+            final_query += "*** WRITE_FILE: <ruta> ***\n<contenido>\n*** END_WRITE ***\n"
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
