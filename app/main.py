@@ -457,13 +457,16 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             answer_text = response.get("answer", "")
             sources_list = response.get("sources", [])
             
-            background_tasks.add_task(
-                chat_history.save_interaction,
-                session_id,
-                request.query_text,
-                answer_text,
-                sources_list
-            )
+            # Save History (Synchronous for reliability)
+            try:
+                chat_history.save_interaction(
+                    session_id,
+                    request.query_text,
+                    answer_text,
+                    sources_list
+                )
+            except Exception as e:
+                print(f"Error saving history: {e}")
     
         # 4. Return result with Session ID and RAG mode used
         if isinstance(response, dict):
