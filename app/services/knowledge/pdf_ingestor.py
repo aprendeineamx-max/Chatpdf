@@ -22,8 +22,8 @@ from app.core.database import SessionLocal, AtomicContext, AtomicArtifact
 # Storage location for downloaded PDFs
 SHARED_PDFS_DIR = "data/shared_pdfs"
 
-# Maximum file size (50MB)
-MAX_FILE_SIZE = 50 * 1024 * 1024
+# Maximum file size (500MB)
+MAX_FILE_SIZE = 500 * 1024 * 1024
 
 
 class PDFIngestor:

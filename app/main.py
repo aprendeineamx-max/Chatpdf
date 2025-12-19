@@ -43,6 +43,10 @@ import os
 os.makedirs("data/uploads", exist_ok=True)
 app.mount("/files", StaticFiles(directory="data/uploads"), name="files")
 
+# [NEW] Mount shared_pdfs to serve URL-ingested PDFs
+os.makedirs("data/shared_pdfs", exist_ok=True)
+app.mount("/files/pdfs", StaticFiles(directory="data/shared_pdfs"), name="shared_pdfs")
+
 @app.on_event("startup")
 async def startup_event():
     if settings.CORE_MODE == "LOCAL":

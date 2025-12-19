@@ -73,6 +73,11 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     
     job_id = str(uuid.uuid4())
     
+    # Predict filename to return a valid URL immediately (Best Effort)
+    # This allows the frontend to start polling/loading the file
+    from app.services.knowledge.pdf_ingestor import pdf_ingestor
+    predicted_name = pdf_ingestor._extract_filename(req.url)
+    
     # Run in background (pass rag_mode, page_offset, enable_ocr for semantic embeddings)
     background_tasks.add_task(
         pdf_ingestor.ingest_pdf_url, 
@@ -85,13 +90,18 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
         req.enable_ocr      # NEW: Pass OCR flag
     )
     
+    # [FIX] Return accessible FILE URL
+    # Static mount: /files/pdfs -> data/shared_pdfs
+    file_url = f"http://127.0.0.1:8000/files/pdfs/{predicted_name}/original.pdf"
+
     return {
         "status": "started",
         "message": f"PDF ingestion started (mode: {req.rag_mode}).",
         "job_id": job_id,
-        "pdf_url": req.url,
+        "pdf_url": req.url,           # Original Source
+        "file_url": file_url,         # Local Accessible URL [NEW]
         "session_id": final_session_id,
-        "rag_mode": req.rag_mode  # Return mode for frontend
+        "rag_mode": req.rag_mode
     }
 
 
