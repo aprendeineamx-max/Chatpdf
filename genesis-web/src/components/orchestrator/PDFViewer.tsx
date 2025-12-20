@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 
-// Setup worker (required for react-pdf)
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Setup worker (Vite compatible)
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface PDFViewerProps {
     pdfUrl: string | null;
