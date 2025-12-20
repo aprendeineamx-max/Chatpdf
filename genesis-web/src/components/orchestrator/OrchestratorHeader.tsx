@@ -15,6 +15,9 @@ interface OrchestratorHeaderProps {
     // NEW: RAG Mode
     ragMode: string;
     setRagMode: (mode: string) => void;
+    // NEW: Persona Mode
+    persona: "architect" | "tutor";
+    setPersona: (persona: "architect" | "tutor") => void;
 }
 
 export function OrchestratorHeader({
@@ -29,7 +32,9 @@ export function OrchestratorHeader({
     systemMode,
     setSystemMode,
     ragMode,
-    setRagMode
+    setRagMode,
+    persona,
+    setPersona
 }: OrchestratorHeaderProps) {
     return (
         <header className="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-[#16161a] shrink-0 z-10">
@@ -60,6 +65,24 @@ export function OrchestratorHeader({
                     <RefreshCcw className="w-3.5 h-3.5" />
                     New Chat
                 </button>
+
+                {/* Persona Mode Toggle */}
+                <div className="flex bg-black/40 p-1 rounded-lg border border-gray-800">
+                    <button
+                        onClick={() => setPersona("architect")}
+                        className={`px-3 py-1 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${persona === "architect" ? "bg-cyan-700 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}
+                        title="Architect: Coding & File Operations"
+                    >
+                        🏗️ ARCH
+                    </button>
+                    <button
+                        onClick={() => setPersona("tutor")}
+                        className={`px-3 py-1 rounded text-[10px] font-bold transition-all flex items-center gap-1 ${persona === "tutor" ? "bg-amber-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}
+                        title="Tutor: Explanation & Context (Read-Only)"
+                    >
+                        🎓 TUTOR
+                    </button>
+                </div>
 
                 {/* Provider Selector */}
                 <div className="relative group">
@@ -101,7 +124,7 @@ export function OrchestratorHeader({
                 </div>
 
                 {/* NEW: RAG Mode Selector */}
-                <div className="relative group">
+                <div className="relative group hidden lg:block">
                     <select
                         value={ragMode}
                         onChange={(e) => setRagMode(e.target.value)}

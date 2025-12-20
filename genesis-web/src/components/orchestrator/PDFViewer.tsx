@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, AlertTriangle } from 'lucide-react';
 
 // Setup worker (Vite compatible)
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
@@ -17,19 +17,34 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
     const [numPages, setNumPages] = useState<number>(0);
     const [scale, setScale] = useState(1.0);
     const [inputPage, setInputPage] = useState<string>(currentPage.toString());
+    const [fitMode, setFitMode] = useState<"width" | "page" | "manual">("width");
 
     // [FIX] Blob Loading State
     const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
 
+    // Responsive Logic
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [containerWidth, setContainerWidth] = useState<number>(0);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver(entries => {
+            if (entries[0]) {
+                const { width } = entries[0].contentRect;
+                setContainerWidth(width);
+            }
+        });
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
     useEffect(() => {
         setInputPage(currentPage.toString());
     }, [currentPage]);
 
     // [FIX] Robust Blob Fetching
-    // This bypasses CORS issues by fetching the file via the main thread (where we have access)
-    // and passing a Blob URL to the Worker.
     useEffect(() => {
         if (!pdfUrl) {
             setResolvedUrl(null);
@@ -39,7 +54,7 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
         let active = true;
         setLoading(true);
         setError(null);
-        setResolvedUrl(null); // Reset to show loading
+        setResolvedUrl(null);
 
         async function fetchPdf() {
             try {
@@ -73,6 +88,8 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
         setError(null);
+        // Reset to width fit on load
+        setFitMode("width");
     }
 
     function onDocumentLoadError(err: Error) {
@@ -86,8 +103,28 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
         if (page >= 1 && page <= numPages) {
             onPageChange(page);
         } else {
-            setInputPage(currentPage.toString()); // Reset on invalid
+            setInputPage(currentPage.toString());
         }
+    }
+
+    function getPageProps() {
+        if (fitMode === "width" && containerWidth > 0) {
+            return { width: containerWidth - 64 }; // Padding compensation
+        }
+        if (fitMode === "page" && containerRef.current) {
+            // Estimate height based fit - tricky without knowing aspect ratio beforehand
+            // Fallback to simpler manual scale for "page fit" usually implies "whole page visible"
+            // For now, let's just stick to width or manual scale.
+            // Actually, for "page" fit, we usually want height to match container height
+            return { height: containerRef.current.clientHeight - 40 };
+        }
+        return { scale: scale };
+    }
+
+    // Toggle Fit Mode
+    function toggleFit() {
+        setFitMode(prev => prev === "width" ? "manual" : "width");
+        setScale(1.0);
     }
 
     if (!pdfUrl) {
@@ -100,12 +137,14 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
         );
     }
 
+    const { width: pageWidth, height: pageHeight, scale: pageScale } = getPageProps() as any;
+
     return (
-        <div className="flex flex-col h-full bg-[#525659] relative"> {/* Google Drive grey background */}
+        <div className="flex flex-col h-full bg-[#525659] relative">
             {/* Floating Top Toolbar */}
-            <div className="bg-[#2b2c31] text-white flex items-center justify-between px-4 py-2 shadow-md z-10">
-                <div className="flex items-center gap-4 bg-[#1e1f24] rounded-full px-2 py-1 shadow-inner">
-                    <span className="text-xs font-bold px-2 text-purple-300 truncate max-w-[150px]" title={pdfUrl}>
+            <div className="bg-[#2b2c31] text-white flex items-center justify-between px-4 py-2 shadow-md z-10 shrink-0">
+                <div className="flex items-center gap-4 bg-[#1e1f24] rounded-full px-2 py-1 shadow-inner max-w-[30%]">
+                    <span className="text-xs font-bold px-2 text-purple-300 truncate" title={pdfUrl}>
                         {pdfUrl.split('/').pop()?.split('?')[0] || 'Document'}
                     </span>
                 </div>
@@ -132,18 +171,28 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
                 </div>
 
                 <div className="flex items-center gap-2 bg-[#1e1f24] rounded-full px-3 py-1 shadow-inner">
-                    <button onClick={() => setScale(s => Math.max(0.5, s - 0.1))} className="p-1 hover:bg-gray-700 rounded-full">
+                    <button
+                        onClick={toggleFit}
+                        className={`p-1 rounded-full whitespace-nowrap px-2 text-[10px] font-bold ${fitMode === 'width' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                        title="Toggle Width Fit"
+                    >
+                        {fitMode === 'width' ? '↔ FIT' : 'Fixed'}
+                    </button>
+
+                    <button onClick={() => { setScale(s => Math.max(0.5, s - 0.1)); setFitMode('manual'); }} className="p-1 hover:bg-gray-700 rounded-full">
                         <ZoomOut className="w-4 h-4" />
                     </button>
-                    <span className="text-xs font-mono w-10 text-center text-gray-400">{Math.round(scale * 100)}%</span>
-                    <button onClick={() => setScale(s => Math.min(2.5, s + 0.1))} className="p-1 hover:bg-gray-700 rounded-full">
+                    <span className="text-xs font-mono w-10 text-center text-gray-400">
+                        {fitMode === 'width' ? 'AUTO' : `${Math.round(scale * 100)}%`}
+                    </span>
+                    <button onClick={() => { setScale(s => Math.min(2.5, s + 0.1)); setFitMode('manual'); }} className="p-1 hover:bg-gray-700 rounded-full">
                         <ZoomIn className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Document Area */}
-            <div className="flex-1 overflow-auto flex justify-center p-8 relative">
+            <div className="flex-1 overflow-auto flex justify-center p-8 relative" ref={containerRef}>
                 {loading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                         <div className="text-white animate-pulse">Downloading PDF...</div>
@@ -174,7 +223,9 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
                     >
                         <Page
                             pageNumber={currentPage}
-                            scale={scale}
+                            width={pageWidth}
+                            height={pageHeight}
+                            scale={pageScale}
                             renderTextLayer={false}
                             renderAnnotationLayer={false}
                             className="bg-white"

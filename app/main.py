@@ -105,95 +105,9 @@ class QueryRequest(BaseModel):
     model: Optional[str] = None # [NEW] Model Override
     repo_context: Optional[str] = None # [NEW] Active Repo from UI
     rag_mode: str = "injection"  # NEW: "injection" or "semantic"
+    persona: str = "architect"   # [NEW] "architect" or "tutor"
 
-# ============================================================
-# PHASE 2: Intelligent Page Query Detection Functions
-# ============================================================
-import re
-
-def extract_page_query(query_text: str) -> int | None:
-    """Detects if user is asking for a specific page number."""
-    patterns = [
-        r'página\s*(\d+)',
-        r'pagina\s*(\d+)', 
-        r'page\s*(\d+)',
-        r'pag\.?\s*(\d+)',
-        r'p\.?\s*(\d+)',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, query_text.lower())
-        if match:
-            return int(match.group(1))
-    return None
-
-def extract_page_content(full_content: str, page_num: int, page_mapping: dict = None) -> str | None:
-    """
-    Extracts specific page content using page markers.
-    Handles PDF page numbering offset by trying multiple strategies:
-    0. Use page_mapping if available (maps physical page -> PyMuPDF index)
-    1. Exact page number
-    2. Page number +/- 1-2 (for minor offset)
-    3. Wide search for printed page number (±60 pages for major offset)
-    """
-    
-    def try_extract(pn: int) -> str | None:
-        patterns = [
-            rf'--- PAGE {pn}(?: \(PHYSICAL: \d+\))? ---\n(.*?)(?=--- PAGE \d+ ---|$)',
-            rf'--- PAGE {pn} ---\n(.*?)(?=--- PAGE \d+ ---|$)',
-            rf'=== PÁGINA {pn} \|.*?===\n+(.*?)(?====+ PÁGINA \d+ ===|$)',
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, full_content, re.DOTALL | re.IGNORECASE)
-            if match:
-                return match.group(1).strip()
-        return None
-    
-    # Strategy 0: Use page mapping if available (highest priority)
-    if page_mapping:
-        # page_mapping keys might be strings (from JSON) - convert
-        str_key = str(page_num)
-        if str_key in page_mapping:
-            actual_index = page_mapping[str_key]
-            result = try_extract(int(actual_index))
-            if result:
-                print(f"📄 [Page Mapping] Physical page {page_num} → PyMuPDF index {actual_index}")
-                return result
-        # Also try int key
-        if page_num in page_mapping:
-            actual_index = page_mapping[page_num]
-            result = try_extract(int(actual_index))
-            if result:
-                print(f"📄 [Page Mapping] Physical page {page_num} → PyMuPDF index {actual_index}")
-                return result
-    
-    # Strategy 1: Try exact page number
-    result = try_extract(page_num)
-    if result:
-        print(f"📄 [Page Search] Found page {page_num} with exact match")
-        return result
-    
-    # Strategy 2: Try with small offset +/-1, +/-2
-    for offset in [1, -1, 2, -2]:
-        result = try_extract(page_num + offset)
-        if result:
-            print(f"📄 [Page Search] Found page {page_num} using offset {offset:+d}")
-            return result
-    
-    # Strategy 3: Wide search - look for page where physical number appears at end
-    for pn in range(max(1, page_num - 60), min(500, page_num + 60)):
-        content = try_extract(pn)
-        if content:
-            last_30 = content[-30:].strip()
-            if re.search(rf'\b{page_num}\s*$', last_30):
-                print(f"📄 [Page Search] Found physical page {page_num} at end of PAGE {pn}")
-                return content
-            first_30 = content[:30].strip()
-            if re.search(rf'^\s*{page_num}\b', first_30):
-                print(f"📄 [Page Search] Found physical page {page_num} at start of PAGE {pn}")
-                return content
-    
-    print(f"⚠️ [Page Search] Could not find page {page_num}")
-    return None
+# ... (rest of imports/helpers unchanged) ...
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
@@ -381,29 +295,42 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
             final_query += "- Responde DIRECTAMENTE a lo que el usuario pregunta.\n"
             final_query += "- Usa el historial de arriba para dar contexto pero no lo repitas.\n\n"
         
-        if not has_content:
-            # NO CONTENT - Friendly welcome prompt
-            final_query += "Eres Genesis, un asistente amigable y experto.\n"
-            final_query += "Actualmente NO hay contenido disponible en esta conversación.\n"
-            final_query += "Para poder ayudarte mejor, el usuario puede:\n"
-            final_query += "1. Ingestar un PDF usando el botón 'Ingest Repo' → 'PDF URL'\n"
-            final_query += "Eres Genesis, un arquitecto de software experto.\n"
-            final_query += "Tienes acceso al código del repositorio que se te proporciona arriba.\n\n"
-            final_query += "CAPACIDADES:\n"
-            final_query += "- Analizar y explicar código\n"
-            final_query += "- Sugerir mejoras y refactorizaciones\n"
-            final_query += "- Crear nuevos archivos de código\n\n"
-            final_query += "PARA CREAR/EDITAR ARCHIVOS, USA ESTE FORMATO:\n"
-            final_query += "*** WRITE_FILE: <ruta_relativa> ***\n"
-            final_query += "<contenido>\n"
-            final_query += "*** END_WRITE ***\n\n"
+        # [PERSONA SWITCH]
+        if request.persona == "tutor":
+            final_query += "🎓 MODO TUTOR ACTIVADO 🎓\n"
+            final_query += "Eres 'Maestro Tutor', un asistente educativo paciente y experto.\n"
+            final_query += "TU OBJETIVO PRINCIPAL: Ayudar al estudiante a entender profundamente el material de la página actual.\n"
+            final_query += "REGLAS:\n"
+            final_query += "1. EXPLICA, NO RESUMAS: No te limites a leer el texto. Explica los conceptos, da ejemplos, haz analogías.\n"
+            final_query += "2. CONTEXTO TEMÁTICO: Entiende que la página es parte de una unidad mayor. Si un tema empieza antes, menciónalo.\n"
+            final_query += "3. GUÍA: Haz preguntas socráticas para verificar entendimiento ('¿Qué crees que significa esto?').\n"
+            final_query += "4. VERACIDAD: Basa tus respuestas EXCLUSIVAMENTE en el 'CONTEXT DISPONIBLE'. Si no lo sabes, dilo.\n"
+            final_query += "5. PROHIBIDO EDITAR CÓDIGO/ARCHIVOS: Eres un tutor, no un programador. No generes bloques `*** WRITE_FILE ***`.\n\n"
         
-        else:
-            # BOTH PDF AND REPO - Full capabilities
-            final_query += "Eres Genesis, un asistente experto con acceso a documentos y código.\n"
-            final_query += "Puedes analizar PDFs y trabajar con repositorios de código.\n\n"
-            final_query += "PARA ARCHIVOS:\n"
-            final_query += "*** WRITE_FILE: <ruta> ***\n<contenido>\n*** END_WRITE ***\n"
+        else: # Default: "architect"
+            if not has_content:
+                # NO CONTENT - Friendly welcome prompt
+                final_query += "Eres Genesis, un asistente amigable y experto.\n"
+                final_query += "Actualmente NO hay contenido disponible en esta conversación.\n"
+                final_query += "Para poder ayudarte mejor, el usuario puede:\n"
+                final_query += "1. Ingestar un PDF usando el botón 'Ingest Repo' → 'PDF URL'\n"
+                final_query += "Eres Genesis, un arquitecto de software experto.\n"
+                final_query += "Tienes acceso al código del repositorio que se te proporciona arriba.\n\n"
+                final_query += "CAPACIDADES:\n"
+                final_query += "- Analizar y explicar código\n"
+                final_query += "- Sugerir mejoras y refactorizaciones\n"
+                final_query += "- Crear nuevos archivos de código\n\n"
+                final_query += "PARA CREAR/EDITAR ARCHIVOS, USA ESTE FORMATO:\n"
+                final_query += "*** WRITE_FILE: <ruta_relativa> ***\n"
+                final_query += "<contenido>\n"
+                final_query += "*** END_WRITE ***\n\n"
+            
+            else:
+                # BOTH PDF AND REPO - Full capabilities
+                final_query += "Eres Genesis, un asistente experto con acceso a documentos y código.\n"
+                final_query += "Puedes analizar PDFs y trabajar con repositorios de código.\n\n"
+                final_query += "PARA ARCHIVOS:\n"
+                final_query += "*** WRITE_FILE: <ruta> ***\n<contenido>\n*** END_WRITE ***\n"
 
         if request.mode == "swarm":
             response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)

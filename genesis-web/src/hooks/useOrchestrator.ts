@@ -23,7 +23,8 @@ export function useOrchestrator() {
     const [systemMode, setSystemMode] = useState<"LOCAL" | "CLOUD">("LOCAL");
     const [selectedModel, setSelectedModel] = useState("Meta-Llama-3.3-70B-Instruct");
     const [selectedProvider, setSelectedProvider] = useState<string>("sambanova");
-    const [ragMode, setRagMode] = useState<string>("injection"); // NEW: "injection" or "semantic"
+    const [ragMode, setRagMode] = useState<string>("injection");
+    const [persona, setPersona] = useState<"architect" | "tutor">("architect"); // [NEW] Persona State
 
     // Context / Knowledge State
     const [activeTab, setActiveTab] = useState<'roadmap' | 'knowledge'>('roadmap');
@@ -45,6 +46,10 @@ export function useOrchestrator() {
     const [editorContent, setEditorContent] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadingContent, setIsLoadingContent] = useState(false);
+
+    // PDF State
+    const [activePdfUrl, setActivePdfUrl] = useState<string | null>(null);
+    const [pdfPage, setPdfPage] = useState<number>(1);
 
     // --- Effects ---
 
@@ -174,11 +179,6 @@ export function useOrchestrator() {
         }
     }
 
-    const [activePdfUrl, setActivePdfUrl] = useState<string | null>(null);
-    const [pdfPage, setPdfPage] = useState<number>(1);
-
-    // ... (existing state) ...
-
     async function sendMessage() {
         if (!input.trim()) return;
 
@@ -200,7 +200,8 @@ export function useOrchestrator() {
                     model: selectedModel,
                     provider: selectedProvider,
                     repo_context: expandedRepo,
-                    rag_mode: ragMode
+                    rag_mode: ragMode,
+                    persona: persona // [NEW] Send Persona
                 }),
             });
 
@@ -216,12 +217,6 @@ export function useOrchestrator() {
             const ragModeUsed = data.rag_mode_used || ragMode;
 
             // [NEW] PDF SYNC LOGIC
-            // Look for priority context marker in the answer or sources to determine page
-            // Or look for specific "page X" mentions in the AI answer if structured
-            // Simple RegEx on the answer for now: "PÁGINA (\d+)" inside context blocks or explicit AI mention
-            // Better: The backend injects "⚠️ CONTEXTO PRIORITARIO: PÁGINA {requested_page} ⚠️" into context
-            // But frontend receives the ANSWER. The answer might mention "En la página 79...".
-            // Let's use a regex on the answer to auto-scroll if AI explicitly cites a page number.
             const pageMatch = data.answer?.match(/página\s+(\d+)/i);
             if (pageMatch && pageMatch[1]) {
                 setPdfPage(parseInt(pageMatch[1]));
@@ -230,11 +225,14 @@ export function useOrchestrator() {
             const ragIndicator = ragModeUsed === "semantic" ? " 🔍" :
                 ragModeUsed === "injection (fallback)" ? " 💉⚡" : " 💉";
 
+            // [NEW] Persona Indicator
+            const personaIndicator = persona === "tutor" ? " 🎓" : " 🏗️";
+
             const botMsg: Message = {
                 role: 'assistant',
                 content: data.answer || "I processed that but have no specific answer.",
                 sources: data.sources,
-                model: finalModel + (finalProvider && finalProvider !== "unknown" ? ` @ ${finalProvider}` : "") + ragIndicator
+                model: finalModel + (finalProvider && finalProvider !== "unknown" ? ` @ ${finalProvider}` : "") + ragIndicator + personaIndicator
             };
             setMessages(prev => [...prev, botMsg]);
 
@@ -246,7 +244,6 @@ export function useOrchestrator() {
             setMessages(prev => [...prev, { role: 'system', content: `Error: ${msg}` }]);
         } finally { setLoading(false); }
     }
-
 
     // --- File Logic ---
     async function fetchFiles(repoName: string, path: string) {
@@ -274,10 +271,7 @@ export function useOrchestrator() {
             }
         } catch (e) {
             console.error(e);
-            // Close modal on error or show error state? For now, close and alert.
             setSelectedFile(null);
-            // In a better world, we'd use a toast.
-            // Using alert to not break existing pattern, but minimizing "blocking".
         } finally {
             setIsLoadingContent(false);
         }
@@ -441,7 +435,9 @@ export function useOrchestrator() {
         tasks, messages, input, setInput, loading, isPolling,
         currentSessionId, sessions, showHistory, setShowHistory,
         systemMode, setSystemMode, selectedModel, setSelectedModel, selectedProvider, setSelectedProvider,
-        ragMode, setRagMode, // NEW: RAG Mode
+        ragMode, setRagMode,
+        persona, setPersona, // [NEW] Export Persona State
+
         activeTab, setActiveTab, repos,
         expandedRepo, setExpandedRepo, repoFiles, selectedFile, setSelectedFile, isLoadingFiles,
         ingestUrl, setIngestUrl, ingestScope, setIngestScope, showIngestModal, setShowIngestModal,
@@ -450,11 +446,10 @@ export function useOrchestrator() {
         activePdfUrl, setActivePdfUrl, pdfPage, setPdfPage,
 
         // Editor State
-        isEditing, setIsEditing, editorContent, setEditorContent, isSaving,
+        isEditing, isSaving, editorContent, setEditorContent, setIsEditing, isLoadingContent,
 
         // Actions
         sendMessage, handleNewChat, handleSelectSession, handleCloneSession, handleDeleteSession,
-        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF, handleIngestUpload,
-        isLoadingContent // Exported
+        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF, handleIngestUpload
     };
 }

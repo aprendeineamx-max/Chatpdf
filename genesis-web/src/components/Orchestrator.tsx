@@ -18,6 +18,8 @@ export function Orchestrator() {
         currentSessionId, sessions, showHistory, setShowHistory,
         systemMode, setSystemMode, selectedModel, setSelectedModel, selectedProvider, setSelectedProvider,
         ragMode, setRagMode, // NEW: RAG Mode
+        persona, setPersona, // [NEW] Persona Mode
+
         activeTab, setActiveTab, repos,
         expandedRepo, setExpandedRepo, repoFiles, selectedFile, setSelectedFile, isLoadingFiles,
         ingestUrl, setIngestUrl, ingestScope, setIngestScope, showIngestModal, setShowIngestModal,
@@ -48,6 +50,8 @@ export function Orchestrator() {
                 setSystemMode={setSystemMode}
                 ragMode={ragMode}
                 setRagMode={setRagMode}
+                persona={persona}
+                setPersona={setPersona}
             />
 
             <div className="flex-1 flex overflow-hidden">

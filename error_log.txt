@@ -1,7 +1,7 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 243, in query_document
-    session_context_ids = [c.id for c in session_contexts]
-                                         ^^^^^^^^^^^^^^^^
-NameError: name 'session_contexts' is not defined
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 151, in query_document
+    requested_page = extract_page_query(request.query_text)
+                     ^^^^^^^^^^^^^^^^^^
+NameError: name 'extract_page_query' is not defined
 
-Error: name 'session_contexts' is not defined
+Error: name 'extract_page_query' is not defined
