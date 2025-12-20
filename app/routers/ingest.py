@@ -104,7 +104,8 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     )
     
     # [FIX] Return accessible FILE URL using Job ID (Deterministic)
-    file_url = f"http://127.0.0.1:8000/files/pdfs/{job_id}/original.pdf"
+    # Changed from /files/pdfs to /pdfs to avoid collision
+    file_url = f"http://127.0.0.1:8000/pdfs/{job_id}/original.pdf"
 
     return {
         "status": "started",
@@ -179,8 +180,10 @@ async def ingest_pdf_upload(
         True # skip_download = True
     )
     
+    
     # Accessible URL
-    file_url = f"http://127.0.0.1:8000/files/pdfs/{job_id}/original.pdf"
+    # [FIX] Changed from /files/pdfs to /pdfs to avoid collision with /files mount
+    file_url = f"http://127.0.0.1:8000/pdfs/{job_id}/original.pdf"
     
     return {
         "status": "started",
