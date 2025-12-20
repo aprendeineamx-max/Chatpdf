@@ -37,61 +37,85 @@ class PDFIngestor:
         # In-memory job tracking: {job_id: {status, url, error, start_time}}
         self.JOBS: Dict[str, Dict[str, Any]] = {}
 
+    def download_only(self, url: str, job_id: str) -> str:
+        """
+        Synchronously downloads the PDF and returns the local path.
+        Use this to ensure file exists before returning response to frontend.
+        """
+        
+        # Initialize job status if not exists
+        if job_id not in self.JOBS:
+             self.JOBS[job_id] = {
+                "status": "INITIALIZING",
+                "url": url,
+                "start_time": datetime.utcnow().isoformat(),
+                "error": None
+            }
+
+        # 1. Convert Cloud URL
+        download_url = self._normalize_url(url)
+        if not download_url:
+            raise ValueError("Could not convert URL to downloadable format")
+
+        # 2. Determine target path (Deterministic)
+        target_dir = os.path.join(SHARED_PDFS_DIR, job_id)
+        os.makedirs(target_dir, exist_ok=True)
+        pdf_path = os.path.join(target_dir, "original.pdf")
+        
+        # 3. Download
+        self.JOBS[job_id]["status"] = "DOWNLOADING"
+        success = self._download_pdf(download_url, pdf_path)
+        if not success:
+            self.JOBS[job_id]["status"] = "FAILED"
+            raise Exception("Failed to download PDF")
+            
+        print(f"✅ [PDFIngestor] Downloaded to {pdf_path}")
+        return pdf_path
+
     def ingest_pdf_url(
         self, 
         url: str, 
         job_id: str, 
         scope: str = "global", 
         session_id: Optional[str] = None,
-        rag_mode: str = "injection",  # "injection" or "semantic"
-        page_offset: int = 0,         # Manual page offset correction
-        enable_ocr: bool = False      # Enable OCR for scanned PDFs
+        rag_mode: str = "injection",
+        page_offset: int = 0,
+        enable_ocr: bool = False,
+        skip_download: bool = False # NEW: Allow skipping if already downloaded
     ) -> Dict[str, Any]:
         """
-        Downloads a PDF from URL and creates knowledge artifacts.
-        
-        Args:
-            url: The PDF URL (direct link, Google Drive, or Dropbox)
-            job_id: Unique identifier for this job
-            scope: "global" or "session"
-            session_id: Required if scope is "session"
-            rag_mode: "injection" (direct) or "semantic" (embeddings)
-            
-        Returns:
-            Dict with status and context_id
+        Downloads (optional) and processes PDF.
         """
-        self.JOBS[job_id] = {
-            "status": "INITIALIZING",
-            "url": url,
-            "start_time": datetime.utcnow().isoformat(),
+        # Ensure job entry exists
+        if job_id not in self.JOBS:
+             self.JOBS[job_id] = {
+                "status": "INITIALIZING",
+                "url": url,
+                "start_time": datetime.utcnow().isoformat(),
+                "error": None
+            }
+        
+        # Update job metadata
+        self.JOBS[job_id].update({
             "scope": scope,
             "session_id": session_id,
-            "rag_mode": rag_mode,  # Track RAG mode in job
-            "error": None
-        }
+            "rag_mode": rag_mode
+        })
 
         try:
-            # 1. Convert cloud storage links to direct download URLs
-            download_url = self._normalize_url(url)
-            if not download_url:
-                raise ValueError("Could not convert URL to downloadable format")
-
-            # 2. Extract filename from URL (for display name only)
-            pdf_name = self._extract_filename(url)
-            
-            # [FIX] Use Job ID for folder name to guarantee deterministic path matching
-            # logic in router. content.txt and original.pdf will live here.
             target_dir = os.path.join(SHARED_PDFS_DIR, job_id)
-            os.makedirs(target_dir, exist_ok=True)
-            
             pdf_path = os.path.join(target_dir, "original.pdf")
             content_path = os.path.join(target_dir, "content.txt")
+            
+            # Predict name for DB
+            pdf_name = self._extract_filename(url)
 
-            # 3. Download the PDF
-            self.JOBS[job_id]["status"] = "DOWNLOADING"
-            success = self._download_pdf(download_url, pdf_path)
-            if not success:
-                raise Exception("Failed to download PDF")
+            # 1. Download if not skipped
+            if not skip_download:
+                try:
+                    self.download_only(url, job_id)
+                except Exception as dl_err:
+                     raise dl_err
 
             # 4. Extract text content with page mapping
             self.JOBS[job_id]["status"] = "EXTRACTING"

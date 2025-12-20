@@ -73,12 +73,24 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     
     job_id = str(uuid.uuid4())
     
-    # Predict filename to return a valid URL immediately (Best Effort)
-    # This allows the frontend to start polling/loading the file
+    # Predict filename (for display)
     from app.services.knowledge.pdf_ingestor import pdf_ingestor
-    predicted_name = pdf_ingestor._extract_filename(req.url)
+    # predicted_name = pdf_ingestor._extract_filename(req.url) # Not needed for URL logic anymore
     
-    # Run in background (pass rag_mode, page_offset, enable_ocr for semantic embeddings)
+    # [FIX] Synchronous Download to prevent Race Condition
+    # We download the file NOW, so it exists when the frontend receives the URL.
+    try:
+        print(f"📥 [Router] Starting synchronous download for job {job_id}")
+        pdf_ingestor.download_only(req.url, job_id)
+        print(f"✅ [Router] Download complete for job {job_id}")
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to download PDF: {str(e)}",
+            "job_id": job_id
+        }
+
+    # Run PROCESSING in background (skip download since we just did it)
     background_tasks.add_task(
         pdf_ingestor.ingest_pdf_url, 
         req.url, 
@@ -86,12 +98,12 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
         req.scope, 
         final_session_id,
         req.rag_mode,
-        req.page_offset,    # NEW: Pass page offset
-        req.enable_ocr      # NEW: Pass OCR flag
+        req.page_offset,
+        req.enable_ocr,
+        True # skip_download = True
     )
     
     # [FIX] Return accessible FILE URL using Job ID (Deterministic)
-    # Static mount: /files/pdfs -> data/shared_pdfs
     file_url = f"http://127.0.0.1:8000/files/pdfs/{job_id}/original.pdf"
 
     return {
