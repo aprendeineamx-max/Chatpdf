@@ -388,6 +388,54 @@ export function useOrchestrator() {
         }
     }
 
+    async function handleIngestUpload(file: File, pageOffset: number = 0, enableOcr: boolean = false) {
+        if (!file) return;
+        setShowIngestModal(false);
+        setActiveTab('knowledge');
+        const ocrInfo = enableOcr ? ' (OCR enabled)' : '';
+        const offsetInfo = pageOffset !== 0 ? ` (offset: ${pageOffset})` : '';
+        setMessages(prev => [...prev, { role: 'system', content: `📤 PDF UPLOAD INITIATED: ${file.name}${ocrInfo}${offsetInfo}` }]);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('scope', ingestScope);
+            if (currentSessionId) formData.append('session_id', currentSessionId);
+            formData.append('rag_mode', ragMode);
+            formData.append('page_offset', pageOffset.toString());
+            formData.append('enable_ocr', enableOcr.toString());
+
+            const res = await fetch(`${API_URL}/api/v1/ingest/pdf_upload`, {
+                method: 'POST',
+                body: formData, // Auto-sets Content-Type to multipart
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(prev => [...prev, { role: 'system', content: `✅ PDF UPLOAD COMPLETED.` }]);
+
+                // Adopt session ID if needed
+                let effectiveSessionId = currentSessionId;
+                if (data.session_id && data.session_id !== currentSessionId) {
+                    setCurrentSessionId(data.session_id);
+                    effectiveSessionId = data.session_id;
+                    loadSessions();
+                }
+
+                // Set Active PDF immediately using local file URL
+                if (data.file_url) {
+                    setActivePdfUrl(data.file_url);
+                }
+
+                loadData(true, effectiveSessionId);
+            } else {
+                throw new Error("PDF Upload failed");
+            }
+        } catch (e: any) {
+            setMessages(prev => [...prev, { role: 'system', content: `❌ PDF UPLOAD FAILED: ${e.message}` }]);
+        }
+    }
+
     return {
         // State
         tasks, messages, input, setInput, loading, isPolling,
@@ -406,7 +454,7 @@ export function useOrchestrator() {
 
         // Actions
         sendMessage, handleNewChat, handleSelectSession, handleCloneSession, handleDeleteSession,
-        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF,
+        fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF, handleIngestUpload,
         isLoadingContent // Exported
     };
 }

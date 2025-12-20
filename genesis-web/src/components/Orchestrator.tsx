@@ -29,7 +29,7 @@ export function Orchestrator() {
         isEditing, editorContent, isSaving, setEditorContent, setIsEditing, isLoadingContent,
 
         handleNewChat, handleSelectSession, handleCloneSession, handleDeleteSession,
-        sendMessage, fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF
+        sendMessage, fetchFiles, fetchContent, saveCurrentFile, handleIngestSubmit, handleIngestPDF, handleIngestUpload
     } = useOrchestrator();
 
     return (
@@ -114,6 +114,7 @@ export function Orchestrator() {
                 setIngestScope={setIngestScope}
                 handleIngestSubmit={handleIngestSubmit}
                 handleIngestPDF={handleIngestPDF}
+                handleIngestUpload={handleIngestUpload}
             />
 
             <FileEditorModal

@@ -117,6 +117,83 @@ async def ingest_pdf_url(req: PDFRequest, background_tasks: BackgroundTasks):
     }
 
 
+from fastapi import UploadFile, File, Form
+
+@router.post("/pdf_upload")
+async def ingest_pdf_upload(
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    scope: str = Form("global"),
+    session_id: Optional[str] = Form(None),
+    rag_mode: str = Form("injection"),
+    page_offset: int = Form(0),
+    enable_ocr: bool = Form(False)
+):
+    """
+    Directly uploads a PDF file and starts processing.
+    Bypasses download issues and ensures file exists locally.
+    """
+    import uuid
+    import shutil
+    import os
+    from app.services.knowledge.pdf_ingestor import pdf_ingestor, SHARED_PDFS_DIR
+    
+    # Generate session ID if needed
+    final_session_id = session_id
+    if scope == "session" and not final_session_id:
+        from app.services.chat.history import chat_history
+        final_session_id = chat_history.create_session(title=f"PDF: {file.filename}")
+    
+    job_id = str(uuid.uuid4())
+    
+    # 1. Create Target Directory
+    target_dir = os.path.join(SHARED_PDFS_DIR, job_id)
+    os.makedirs(target_dir, exist_ok=True)
+    pdf_path = os.path.join(target_dir, "original.pdf")
+    
+    # 2. Save Uploaded File Directly
+    try:
+        with open(pdf_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        print(f"✅ [Router] Uploaded file saved to {pdf_path}")
+    except Exception as e:
+        return {
+            "status": "error", 
+            "message": f"Failed to save uploaded file: {str(e)}",
+            "job_id": job_id
+        }
+        
+    # 3. Create a pseudo-URL for tracking (local path)
+    pseudo_url = f"file://{file.filename}"
+    
+    # 4. Trigger processing (Skip Download)
+    background_tasks.add_task(
+        pdf_ingestor.ingest_pdf_url, 
+        pseudo_url, 
+        job_id, 
+        scope, 
+        final_session_id,
+        rag_mode,
+        page_offset,
+        enable_ocr,
+        True # skip_download = True
+    )
+    
+    # Accessible URL
+    file_url = f"http://127.0.0.1:8000/files/pdfs/{job_id}/original.pdf"
+    
+    return {
+        "status": "started",
+        "message": f"PDF upload started for {file.filename}",
+        "job_id": job_id,
+        "pdf_url": pseudo_url,
+        "file_url": file_url,
+        "session_id": final_session_id,
+        "rag_mode": rag_mode,
+        "name": file.filename
+    }
+
+
 @router.get("/list")
 def list_ingested_repos(session_id: Optional[str] = None):
     """

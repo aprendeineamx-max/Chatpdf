@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Github, FileText, Settings } from 'lucide-react';
+import { Github, FileText, Settings, Upload } from 'lucide-react';
 
 interface IngestModalProps {
     showIngestModal: boolean;
@@ -9,10 +9,11 @@ interface IngestModalProps {
     ingestScope: 'global' | 'session';
     setIngestScope: (scope: 'global' | 'session') => void;
     handleIngestSubmit: () => void;
-    handleIngestPDF?: (pageOffset?: number, enableOcr?: boolean) => void; // Updated handler
+    handleIngestPDF?: (pageOffset?: number, enableOcr?: boolean) => void;
+    handleIngestUpload?: (file: File, pageOffset?: number, enableOcr?: boolean) => void; // NEW: Upload handler
 }
 
-type SourceType = 'repo' | 'pdf';
+type SourceType = 'repo' | 'pdf' | 'upload';
 
 export function IngestModal({
     showIngestModal,
@@ -22,18 +23,22 @@ export function IngestModal({
     ingestScope,
     setIngestScope,
     handleIngestSubmit,
-    handleIngestPDF
+    handleIngestPDF,
+    handleIngestUpload
 }: IngestModalProps) {
     const [sourceType, setSourceType] = useState<SourceType>('repo');
-    const [pageOffset, setPageOffset] = useState<number>(0);    // NEW: Page offset
-    const [enableOcr, setEnableOcr] = useState<boolean>(false);  // NEW: OCR toggle
-    const [showAdvanced, setShowAdvanced] = useState<boolean>(false); // NEW: Advanced options
+    const [pageOffset, setPageOffset] = useState<number>(0);
+    const [enableOcr, setEnableOcr] = useState<boolean>(false);
+    const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null); // NEW: selected file state
 
     if (!showIngestModal) return null;
 
     const handleSubmit = () => {
         if (sourceType === 'pdf' && handleIngestPDF) {
             handleIngestPDF(pageOffset, enableOcr);
+        } else if (sourceType === 'upload' && handleIngestUpload && selectedFile) {
+            handleIngestUpload(selectedFile, pageOffset, enableOcr);
         } else {
             handleIngestSubmit();
         }
@@ -48,44 +53,85 @@ export function IngestModal({
                 <div className="flex gap-2 mb-4">
                     <button
                         onClick={() => setSourceType('repo')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'repo'
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-lg border transition-all ${sourceType === 'repo'
                             ? 'bg-purple-900/40 border-purple-500 text-purple-300'
                             : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
                             }`}
                     >
-                        <Github size={18} />
-                        <span className="font-medium">GitHub Repo</span>
+                        <Github size={16} />
+                        <span className="font-medium text-sm">Repo</span>
                     </button>
                     <button
                         onClick={() => setSourceType('pdf')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border transition-all ${sourceType === 'pdf'
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-lg border transition-all ${sourceType === 'pdf'
                             ? 'bg-red-900/40 border-red-500 text-red-300'
                             : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
                             }`}
                     >
-                        <FileText size={18} />
-                        <span className="font-medium">PDF URL</span>
+                        <FileText size={16} />
+                        <span className="font-medium text-sm">PDF URL</span>
+                    </button>
+                    <button
+                        onClick={() => setSourceType('upload')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 px-2 rounded-lg border transition-all ${sourceType === 'upload'
+                            ? 'bg-blue-900/40 border-blue-500 text-blue-300'
+                            : 'bg-[#0f0f13] border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
+                    >
+                        <Upload size={16} />
+                        <span className="font-medium text-sm">Upload</span>
                     </button>
                 </div>
 
-                {/* Input Field */}
-                <input
-                    type="text"
-                    className="w-full bg-[#0f0f13] border border-gray-600 rounded px-4 py-2 text-white mb-2"
-                    placeholder={sourceType === 'repo' ? "https://github.com/user/repo" : "https://example.com/document.pdf"}
-                    value={ingestUrl}
-                    onChange={e => setIngestUrl(e.target.value)}
-                />
+                {/* Input Fields based on Source Type */}
+                {sourceType === 'upload' ? (
+                    <div className="mb-4">
+                        <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 flex flex-col items-center justify-center bg-[#0f0f13] hover:border-gray-500 transition-colors relative">
+                            <input
+                                type="file"
+                                accept=".pdf"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        setSelectedFile(e.target.files[0]);
+                                    }
+                                }}
+                            />
+                            {selectedFile ? (
+                                <div className="text-center">
+                                    <FileText className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                                    <p className="text-blue-300 font-medium">{selectedFile.name}</p>
+                                    <p className="text-gray-500 text-xs">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-400">
+                                    <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="font-medium">Drop PDF here or click to browse</p>
+                                    <p className="text-xs text-gray-500 mt-1">Max 500MB</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mb-2">
+                        <input
+                            type="text"
+                            className="w-full bg-[#0f0f13] border border-gray-600 rounded px-4 py-2 text-white mb-2"
+                            placeholder={sourceType === 'repo' ? "https://github.com/user/repo" : "https://example.com/document.pdf"}
+                            value={ingestUrl}
+                            onChange={e => setIngestUrl(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500 mb-4">
+                            {sourceType === 'repo'
+                                ? "Paste a public GitHub repository URL"
+                                : "Paste a direct PDF link, Google Drive, or Dropbox URL"}
+                        </p>
+                    </div>
+                )}
 
-                {/* Hint Text */}
-                <p className="text-xs text-gray-500 mb-4">
-                    {sourceType === 'repo'
-                        ? "Paste a public GitHub repository URL"
-                        : "Paste a direct PDF link, Google Drive, or Dropbox URL"}
-                </p>
 
-                {/* NEW: Advanced Options for PDF (Offset + OCR) */}
-                {sourceType === 'pdf' && (
+                {/* NEW: Advanced Options for PDF (Offset + OCR) - For both URL and Upload */}
+                {(sourceType === 'pdf' || sourceType === 'upload') && (
                     <div className="mb-4">
                         <button
                             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -148,9 +194,11 @@ export function IngestModal({
                     <button onClick={() => setShowIngestModal(false)} className="px-4 py-2 text-gray-400">Cancel</button>
                     <button
                         onClick={handleSubmit}
-                        className={`px-4 py-2 text-white rounded ${sourceType === 'repo' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-red-600 hover:bg-red-700'}`}
+                        disabled={sourceType === 'upload' && !selectedFile}
+                        className={`px-4 py-2 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed ${sourceType === 'repo' ? 'bg-purple-600 hover:bg-purple-700' :
+                            sourceType === 'pdf' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                     >
-                        Start Ingestion
+                        {sourceType === 'upload' ? 'Upload PDF' : 'Start Ingestion'}
                     </button>
                 </div>
             </div>
