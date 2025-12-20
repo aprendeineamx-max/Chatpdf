@@ -109,6 +109,54 @@ class QueryRequest(BaseModel):
 
 # ... (rest of imports/helpers unchanged) ...
 
+# [HELPER] Extract Page Number from Query
+def extract_page_query(query: str) -> Optional[int]:
+    import re
+    # Match various patterns: "página 10", "pag 10", "page 10", "p. 10"
+    match = re.search(r'(?:página|pag|page|p\.?)\s*(\d+)', query, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return None
+
+def extract_page_content(full_text: str, page_num: int, page_mapping: Optional[dict] = None) -> Optional[str]:
+    """
+    Extracts content for a specific page.
+    If page_mapping is provided (from JSON), uses character ranges.
+    Otherwise, relies on '[[Page X]]' markers in the text.
+    """
+    try:
+        if page_mapping:
+            # FAST LOOKUP via Mapping
+            page_str = str(page_num)
+            if page_str in page_mapping:
+                start = page_mapping[page_str].get("start")
+                end = page_mapping[page_str].get("end")
+                if start is not None and end is not None:
+                    return full_text[start:end]
+        
+        # FALLBACK: Marker Search
+        import re
+        # Look for [[Page X]] ... [[Page Y]]
+        start_marker = f"[[Page {page_num}]]"
+        start_idx = full_text.find(start_marker)
+        
+        if start_idx == -1:
+            return None
+            
+        # Find next page marker
+        next_page_regex = re.compile(r'\[\[Page \d+\]\]')
+        # Search from start_idx + len(marker)
+        search_start = start_idx + len(start_marker)
+        next_match = next_page_regex.search(full_text, search_start)
+        
+        end_idx = next_match.start() if next_match else len(full_text)
+        
+        return full_text[start_idx:end_idx]
+            
+    except Exception as e:
+        print(f"Error extraction page content: {e}")
+        return None
+
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
     try:

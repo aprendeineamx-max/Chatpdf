@@ -5,7 +5,7 @@ import { ChatArea } from './orchestrator/ChatArea';
 import { KnowledgePanel } from './orchestrator/KnowledgePanel';
 import { IngestModal } from './orchestrator/IngestModal';
 import { PDFViewer } from './orchestrator/PDFViewer';
-import { X } from 'lucide-react';
+
 import { FileEditorModal } from './orchestrator/FileEditorModal';
 
 // Hooks
@@ -78,18 +78,14 @@ export function Orchestrator() {
                     <div className="w-1/2 flex flex-col border-l border-gray-800">
                         {/* Close/Toggle Button Layer could go here */}
                         <div className="flex-1 overflow-hidden relative">
-                            <button
-                                onClick={() => setActivePdfUrl(null)}
-                                className="absolute top-4 right-4 z-50 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110"
-                                title="Close PDF View"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                            <PDFViewer
-                                pdfUrl={activePdfUrl}
-                                currentPage={pdfPage}
-                                onPageChange={setPdfPage}
-                            />
+                            <div className="flex-1 overflow-hidden relative">
+                                <PDFViewer
+                                    pdfUrl={activePdfUrl}
+                                    currentPage={pdfPage}
+                                    onPageChange={setPdfPage}
+                                    onClose={() => setActivePdfUrl(null)}
+                                />
+                            </div>
                         </div>
                     </div>
                 ) : (

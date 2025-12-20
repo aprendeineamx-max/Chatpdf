@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, AlertTriangle, X } from 'lucide-react';
 
 // Setup worker (Vite compatible)
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
@@ -11,13 +11,15 @@ interface PDFViewerProps {
     pdfUrl: string | null;
     currentPage: number;
     onPageChange: (page: number) => void;
+    onClose: () => void;
 }
 
-export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, currentPage, onPageChange, onClose }: PDFViewerProps) {
     const [numPages, setNumPages] = useState<number>(0);
+    // ... (rest of state logic unchanged) ...
     const [scale, setScale] = useState(1.0);
     const [inputPage, setInputPage] = useState<string>(currentPage.toString());
-    const [fitMode, setFitMode] = useState<"width" | "page" | "manual">("width");
+    const [fitMode, setFitMode] = useState<"width" | "height" | "manual">("width"); // [NEW] Height mode
 
     // [FIX] Blob Loading State
     const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
@@ -26,14 +28,14 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
 
     // Responsive Logic
     const containerRef = useRef<HTMLDivElement>(null);
-    const [containerWidth, setContainerWidth] = useState<number>(0);
+    const [containerDims, setContainerDims] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
 
     useEffect(() => {
         if (!containerRef.current) return;
         const observer = new ResizeObserver(entries => {
             if (entries[0]) {
-                const { width } = entries[0].contentRect;
-                setContainerWidth(width);
+                const { width, height } = entries[0].contentRect;
+                setContainerDims({ width, height });
             }
         });
         observer.observe(containerRef.current);
@@ -44,6 +46,7 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
         setInputPage(currentPage.toString());
     }, [currentPage]);
 
+    // ... (Blob fetching effect remains same) ...
     // [FIX] Robust Blob Fetching
     useEffect(() => {
         if (!pdfUrl) {
@@ -85,10 +88,10 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
         };
     }, [pdfUrl]);
 
+
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
         setError(null);
-        // Reset to width fit on load
         setFitMode("width");
     }
 
@@ -108,26 +111,27 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
     }
 
     function getPageProps() {
-        if (fitMode === "width" && containerWidth > 0) {
-            return { width: containerWidth - 64 }; // Padding compensation
+        if (fitMode === "width" && containerDims.width > 0) {
+            return { width: containerDims.width - 64 };
         }
-        if (fitMode === "page" && containerRef.current) {
-            // Estimate height based fit - tricky without knowing aspect ratio beforehand
-            // Fallback to simpler manual scale for "page fit" usually implies "whole page visible"
-            // For now, let's just stick to width or manual scale.
-            // Actually, for "page" fit, we usually want height to match container height
-            return { height: containerRef.current.clientHeight - 40 };
+        if (fitMode === "height" && containerDims.height > 0) {
+            // Subtract padding/toolbar space if needed, usually just height
+            // We want page to fit exactly in viewport height
+            return { height: containerDims.height - 40 };
         }
         return { scale: scale };
     }
 
     // Toggle Fit Mode
     function toggleFit() {
-        setFitMode(prev => prev === "width" ? "manual" : "width");
-        setScale(1.0);
+        // Cycle: Width -> Height -> Manual (100%)
+        if (fitMode === "width") setFitMode("height");
+        else if (fitMode === "height") { setFitMode("manual"); setScale(1.0); }
+        else setFitMode("width");
     }
 
     if (!pdfUrl) {
+        // ... (Empty state remains same) ...
         return (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 bg-[#0f0f12]">
                 <div className="text-6xl mb-4">📄</div>
@@ -142,7 +146,7 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
     return (
         <div className="flex flex-col h-full bg-[#525659] relative">
             {/* Floating Top Toolbar */}
-            <div className="bg-[#2b2c31] text-white flex items-center justify-between px-4 py-2 shadow-md z-10 shrink-0">
+            <div className="bg-[#2b2c31] text-white flex items-center justify-between px-4 py-2 shadow-md z-10 shrink-0 select-none">
                 <div className="flex items-center gap-4 bg-[#1e1f24] rounded-full px-2 py-1 shadow-inner max-w-[30%]">
                     <span className="text-xs font-bold px-2 text-purple-300 truncate" title={pdfUrl}>
                         {pdfUrl.split('/').pop()?.split('?')[0] || 'Document'}
@@ -162,7 +166,7 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
                             onChange={(e) => setInputPage(e.target.value)}
                             onBlur={() => setInputPage(currentPage.toString())}
                         />
-                        <span className="text-xs text-gray-500 select-none">/ {numPages || '-'}</span>
+                        <span className="text-xs text-gray-500">/ {numPages || '-'}</span>
                     </form>
 
                     <button onClick={() => onPageChange(Math.min(numPages, currentPage + 1))} disabled={currentPage >= numPages} className="p-1 hover:bg-gray-700 rounded-full disabled:opacity-30 transition-colors">
@@ -173,26 +177,39 @@ export function PDFViewer({ pdfUrl, currentPage, onPageChange }: PDFViewerProps)
                 <div className="flex items-center gap-2 bg-[#1e1f24] rounded-full px-3 py-1 shadow-inner">
                     <button
                         onClick={toggleFit}
-                        className={`p-1 rounded-full whitespace-nowrap px-2 text-[10px] font-bold ${fitMode === 'width' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
-                        title="Toggle Width Fit"
+                        className={`p-1 rounded-full whitespace-nowrap px-2 text-[10px] font-bold transition-colors ${fitMode !== 'manual' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                        title="Toggle Fit: Width -> Height -> Manual"
                     >
-                        {fitMode === 'width' ? '↔ FIT' : 'Fixed'}
+                        {fitMode === 'width' ? '↔ W-FIT' : fitMode === 'height' ? '↕ H-FIT' : 'Fixed'}
                     </button>
 
                     <button onClick={() => { setScale(s => Math.max(0.5, s - 0.1)); setFitMode('manual'); }} className="p-1 hover:bg-gray-700 rounded-full">
                         <ZoomOut className="w-4 h-4" />
                     </button>
                     <span className="text-xs font-mono w-10 text-center text-gray-400">
-                        {fitMode === 'width' ? 'AUTO' : `${Math.round(scale * 100)}%`}
+                        {fitMode !== 'manual' ? (fitMode === 'width' ? 'AUTO-W' : 'AUTO-H') : `${Math.round(scale * 100)}%`}
                     </span>
                     <button onClick={() => { setScale(s => Math.min(2.5, s + 0.1)); setFitMode('manual'); }} className="p-1 hover:bg-gray-700 rounded-full">
                         <ZoomIn className="w-4 h-4" />
+                    </button>
+
+                    <div className="w-px h-4 bg-gray-600 mx-1"></div>
+
+                    <button
+                        onClick={onClose}
+                        className="p-1 bg-red-600/80 hover:bg-red-600 rounded-full text-white transition-colors"
+                        title="Close PDF"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Document Area */}
-            <div className="flex-1 overflow-auto flex justify-center p-8 relative" ref={containerRef}>
+            <div
+                className={`flex-1 overflow-auto flex justify-center p-8 relative ${fitMode === 'height' ? 'items-center' : ''}`}
+                ref={containerRef}
+            >
                 {loading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
                         <div className="text-white animate-pulse">Downloading PDF...</div>

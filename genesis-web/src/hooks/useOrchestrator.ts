@@ -48,8 +48,14 @@ export function useOrchestrator() {
     const [isLoadingContent, setIsLoadingContent] = useState(false);
 
     // PDF State
-    const [activePdfUrl, setActivePdfUrl] = useState<string | null>(null);
+    const [activePdfUrl, setActivePdfUrl] = useState<string | null>(() => localStorage.getItem("activePdfUrl"));
     const [pdfPage, setPdfPage] = useState<number>(1);
+
+    // [PERSISTENCE] Sync activePdfUrl
+    useEffect(() => {
+        if (activePdfUrl) localStorage.setItem("activePdfUrl", activePdfUrl);
+        else localStorage.removeItem("activePdfUrl");
+    }, [activePdfUrl]);
 
     // --- Effects ---
 
