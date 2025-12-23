@@ -1,0 +1,10 @@
+=== SNOWFLAKE CONNECTION TEST ===
+
+Account: mgjfkfz-vm74209
+User: Apureza
+Database: SNOWFLAKE_LEARNING_DB
+Warehouse: COMPUTE_WH
+Token present: True
+Token (first 30): eyJraWQiOiIyMDUzMjA1NjEzNyIsIm
+
+--- Testing Token Auth ---

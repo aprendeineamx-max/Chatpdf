@@ -25,15 +25,18 @@ class SnowflakeCortexClient:
                 "role": settings.SNOWFLAKE_ROLE
             }
 
-            # Prioritize Token (SAML/OAuth/JWT) if present
+            # Programmatic Access Tokens are passed as password parameter
             if settings.SNOWFLAKE_TOKEN:
-                print("❄️ Connecting to Snowflake using OAuth Token...")
-                conn_params["authenticator"] = "oauth"
-                conn_params["token"] = settings.SNOWFLAKE_TOKEN
-            else:
+                print("❄️ Connecting to Snowflake using Programmatic Access Token...")
+                conn_params["password"] = settings.SNOWFLAKE_TOKEN
+            elif settings.SNOWFLAKE_PASSWORD:
+                print("❄️ Connecting to Snowflake using password...")
                 conn_params["password"] = settings.SNOWFLAKE_PASSWORD
+            else:
+                raise Exception("No authentication method provided (need TOKEN or PASSWORD)")
 
             self.conn = snowflake.connector.connect(**conn_params)
+            print("✅ Snowflake connection established!")
             return self.conn
         except Exception as e:
             print(f"❌ Snowflake Connection Failed: {e}")
