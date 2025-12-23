@@ -1,16 +1,7 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 407, in query_document
-    from app.services.llm.snowflake_service import snowflake_client
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\llm\snowflake_service.py", line 2, in <module>
-    import snowflake.connector
-ModuleNotFoundError: No module named 'snowflake'
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 403, in query_document
+    response += action_log
+    ^^^^^^^^
+UnboundLocalError: cannot access local variable 'response' where it is not associated with a value
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 433, in query_document
-    response = rag_service.query(final_query, use_history=True)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: RAGService.query() got an unexpected keyword argument 'use_history'
-
-Error: RAGService.query() got an unexpected keyword argument 'use_history'
+Error: cannot access local variable 'response' where it is not associated with a value

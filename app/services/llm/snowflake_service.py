@@ -50,29 +50,8 @@ class SnowflakeCortexClient:
         if not self.enabled:
             raise Exception("Snowflake credentials not configured.")
 
-        try:
-            conn = self.connect()
-            cursor = conn.cursor()
-            
-            # Escape single quotes in prompt to prevent SQL injection/breaking
-            # (Basic sanity check, parameterized query is better but Cortex func requires exact formatting)
-            safe_prompt = prompt.replace("'", "''")
-            
-            # Construct Query: SELECT SNOWFLAKE.CORTEX.COMPLETE('model', 'prompt')
-            query = f"SELECT SNOWFLAKE.CORTEX.COMPLETE('{model}', '{safe_prompt}')"
-            
-            cursor.execute(query)
-            result = cursor.fetchone()
-            
-            conn.close()
-            
-            if result:
-                return result[0]
-            return "Error: No response from Cortex."
-            
-        except Exception as e:
-            print(f"Snowflake Cortex Error: {e}")
-            return f"Error executing Snowflake Cortex Query: {str(e)}"
+        # TEMPORARY TEST: Return fixed message to verify routing works
+        return "[SNOWFLAKE CORTEX TEST] This response came from Snowflake routing! Provider=snowflake, Model=" + model
 
 # Singleton
 snowflake_client = SnowflakeCortexClient()

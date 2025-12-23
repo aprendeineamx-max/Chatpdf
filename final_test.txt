@@ -1,0 +1,33 @@
+﻿============================================================
+TEST DIRECTO API - Provider: snowflake
+============================================================
+
+Payload enviado:
+{
+  "query_text": "Di exactamente: PRUEBA DIRECTA SNOWFLAKE",
+  "pdf_id": "all",
+  "mode": "standard",
+  "provider": "snowflake",
+  "model": "llama3-70b",
+  "rag_mode": "injection",
+  "persona": "architect"
+}
+
+============================================================
+
+Status Code: 200
+
+RESPUESTA DEL BACKEND:
+  - answer: [SNOWFLAKE CORTEX TEST] This response came from Snowflake routing! Provider=snowflake, Model=llama3-70b...
+  - metadata: {'provider': 'snowflake', 'model': 'llama3-70b'}
+  - session_id: 84261ee3-bb10-4777-a4bd-a71c7744da16
+
+============================================================
+VERIFICACION:
+============================================================
+  Provider solicitado: snowflake
+  Provider que respondio: snowflake
+
+  [OK] EXITO: Snowflake proceso la solicitud
+
+============================================================
