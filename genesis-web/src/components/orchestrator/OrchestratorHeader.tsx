@@ -95,6 +95,7 @@ export function OrchestratorHeader({
                         <option value="sambanova_primary">🚀 Sambanova (Key 1)</option>
                         <option value="sambanova_secondary">🚀 Sambanova (Key 2)</option>
                         <option value="groq">🏎️ Groq (Llama)</option>
+                        <option value="snowflake">❄️ Snowflake Cortex</option>
                     </select>
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">
                         <ArrowDown className="w-3 h-3" />
@@ -116,6 +117,11 @@ export function OrchestratorHeader({
                         <optgroup label="SambaNova - Meta Llama">
                             <option value="Meta-Llama-3.3-70B-Instruct">🦙 Llama 3.3 70B (Latest)</option>
                             <option value="Meta-Llama-3.1-8B-Instruct">⚡ Llama 8B (Fast)</option>
+                        </optgroup>
+                        <optgroup label="Snowflake Cortex">
+                            <option value="llama3-70b">❄️ Llama 3 70B</option>
+                            <option value="snowflake-arctic">❄️ Arctic (Official)</option>
+                            <option value="mistral-large">❄️ Mistral Large</option>
                         </optgroup>
                     </select>
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none opacity-50">

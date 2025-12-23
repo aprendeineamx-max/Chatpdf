@@ -158,6 +158,28 @@ def extract_page_content(full_text: str, page_num: int, page_mapping: Optional[d
         print(f"Error extraction page content: {e}")
         return None
 
+def extract_smart_context(full_text: str, current_page: int, page_mapping: dict = None, window_size: int = 1) -> str:
+    """
+    Extracts a sliding window of pages: [current_page - window, current_page + window].
+    """
+    context_parts = []
+    
+    start_page = max(1, current_page - window_size)
+    end_page = current_page + window_size
+    # We don't know max pages easily here unless passed, but extraction just returns None if not found.
+    # We'll just try to extract.
+    
+    for p in range(start_page, end_page + 1):
+        content = extract_page_content(full_text, p, page_mapping)
+        if content:
+            marker = " (ANTERIOR)" if p < current_page else " (SIGUIENTE)" if p > current_page else " (ACTUAL)"
+            context_parts.append(f"\n--- PÁGINA {p}{marker} ---\n{content}")
+            
+    if not context_parts:
+        return None
+        
+    return "\n".join(context_parts)
+
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
     try:
@@ -256,19 +278,20 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                                 except:
                                     pass
                         
-                        # Extract and Inject
+                        # Extract and Inject Smart Context (Sliding Window)
                         for art in pdf_artifacts:
                             if art.filename == "pdf_content.txt":
-                                page_content = extract_page_content(art.content, page_to_inject, page_mapping)
+                                # Use Smart Context (Window of +/- 1 page)
+                                page_content = extract_smart_context(art.content, page_to_inject, page_mapping, window_size=1)
                                 if page_content:
                                     knowledge_context += f"\n{'!'*40}\n"
-                                    knowledge_context += f"⚠️ CONTEXTO PRIORITARIO: PÁGINA {page_to_inject} (VISUALIZACIÓN ACTUAL) ⚠️\n"
+                                    knowledge_context += f"⚠️ CONTEXTO TEMÁTICO (VENTANA DESLIZANTE): PÁGINA {page_to_inject} +/- 1 ⚠️\n"
                                     knowledge_context += f"{'!'*40}\n"
                                     knowledge_context += page_content
                                     knowledge_context += f"\n{'!'*40}\n"
-                                    knowledge_context += f"FIN DE CONTEXTO PRIORITARIO\n\n"
+                                    knowledge_context += f"FIN DE CONTEXTO TEMÁTICO\n\n"
                                     page_context_injected = True
-                                    print(f"🚀 [Nav Intent] Injected Page {page_to_inject} Content")
+                                    print(f"🚀 [Nav Intent] Injected Smart Context around Page {page_to_inject}")
 
                     # 2. ADDITIONAL RETRIEVAL (Semantic vs Injection)
                     # Even if we found the page, we might want semantic search for concepts on that page
@@ -375,19 +398,6 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 final_query += "2. SI LA PREGUNTA ES DE CÓDIGO: Puedes usar WRITE_FILE para crear/editar código si es necesario.\n"
                 final_query += "3. NO ALUCINES EDICIONES: No generes bloques WRITE_FILE a menos que el usuario te pida explícitamente crear un archivo o refactorizar código.\n"
                 final_query += "4. SI EL USUARIO PREGUNTA 'De qué trata esta página': Responde con un resumen o explicación, NO creando un archivo.\n\n"
-
-                final_query += "PARA CREAR/EDITAR ARCHIVOS (SÓLO SI ES NECESARIO):\n"
-                final_query += "*** WRITE_FILE: <ruta> ***\n<contenido>\n*** END_WRITE ***\n"
-
-        if request.mode == "swarm":
-            response = await rag_service.query_swarm(final_query, request.pdf_id, model=request.model)
-        else:
-            response = rag_service.query(final_query, request.pdf_id, model=request.model)
-            
-        # [NEW] AGENTIC ACTION EXECUTOR (Write to Disk)
-        # Parse response for Write Blocks
-        from app.services.agent.executor import agent_executor
-        
         action_log = agent_executor.execute_actions(response, target_repo)
         
         # Append action log to response so frontend knows

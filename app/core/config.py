@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     # Shared Providers
     BROWSER_USE_API_KEY: Optional[str] = None
     
+    # Snowflake Cortex
+    SNOWFLAKE_ACCOUNT: Optional[str] = None
+    SNOWFLAKE_USER: Optional[str] = None
+    SNOWFLAKE_PASSWORD: Optional[str] = None
+    SNOWFLAKE_ROLE: Optional[str] = "ACCOUNTADMIN"
+    SNOWFLAKE_WAREHOUSE: Optional[str] = "COMPUTE_WH"
+    SNOWFLAKE_DATABASE: Optional[str] = None
+    SNOWFLAKE_SCHEMA: Optional[str] = "PUBLIC"
+
     # Database Configuration Strategy
     SUPABASE_TARGET: str = "VPS" # Options: "VPS", "CLOUD"
 
