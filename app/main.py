@@ -103,6 +103,7 @@ class QueryRequest(BaseModel):
     mode: str = "standard" 
     session_id: Optional[str] = None # Persistence
     model: Optional[str] = None # [NEW] Model Override
+    provider: Optional[str] = None # [NEW] Provider Selection (sambanova, groq, snowflake, etc.)
     repo_context: Optional[str] = None # [NEW] Active Repo from UI
     rag_mode: str = "injection"  # NEW: "injection" or "semantic"
     persona: str = "architect"   # "architect" or "tutor"
@@ -426,13 +427,13 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                     }
                 else:
                     print("⚠️ Snowflake requested but not enabled, falling back to organic system")
-                    response = rag_service.query(final_query, use_history=True)
+                    response = rag_service.query(final_query)
             except Exception as snowflake_error:
                 print(f"❌ Snowflake Cortex Error: {snowflake_error}, falling back to organic system")
-                response = rag_service.query(final_query, use_history=True)
+                response = rag_service.query(final_query)
         else:
             # Execute via Organic System (Gemini/Groq/SambaNova/etc)
-            response = rag_service.query(final_query, use_history=True)
+            response = rag_service.query(final_query)
 
         # 5. Execute Actions (File Writing)
         from app.services.agent.executor import agent_executor

@@ -1,9 +1,16 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 404, in query_document
-    if request.provider == "snowflake":
-       ^^^^^^^^^^^^^^^^
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\venv\Lib\site-packages\pydantic\main.py", line 1026, in __getattr__
-    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
-AttributeError: 'QueryRequest' object has no attribute 'provider'
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 407, in query_document
+    from app.services.llm.snowflake_service import snowflake_client
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\services\llm\snowflake_service.py", line 2, in <module>
+    import snowflake.connector
+ModuleNotFoundError: No module named 'snowflake'
 
-Error: 'QueryRequest' object has no attribute 'provider'
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 433, in query_document
+    response = rag_service.query(final_query, use_history=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: RAGService.query() got an unexpected keyword argument 'use_history'
+
+Error: RAGService.query() got an unexpected keyword argument 'use_history'
