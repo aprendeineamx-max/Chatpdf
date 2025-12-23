@@ -207,7 +207,8 @@ export function useOrchestrator() {
                     provider: selectedProvider,
                     repo_context: expandedRepo,
                     rag_mode: ragMode,
-                    persona: persona // [NEW] Send Persona
+                    persona: persona,
+                    current_page: pdfPage // [NEW] Send active page
                 }),
             });
 

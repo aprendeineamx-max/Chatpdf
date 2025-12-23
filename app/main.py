@@ -105,7 +105,8 @@ class QueryRequest(BaseModel):
     model: Optional[str] = None # [NEW] Model Override
     repo_context: Optional[str] = None # [NEW] Active Repo from UI
     rag_mode: str = "injection"  # NEW: "injection" or "semantic"
-    persona: str = "architect"   # [NEW] "architect" or "tutor"
+    persona: str = "architect"   # "architect" or "tutor"
+    current_page: Optional[int] = None # [NEW] The page the user is currently viewing
 
 # ... (rest of imports/helpers unchanged) ...
 
@@ -240,10 +241,11 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                     rag_mode_used = request.rag_mode
                     
                     # 1. [PRIORITY] AUTOMATIC PAGE INJECTION
-                    # If user asks for a specific page, we inject it REGARDLESS of mode.
-                    # This ensures "Go to page 79" always has the content it needs.
+                    # Logic: If query has "page X" OR we have a current_page from Frontend
+                    page_to_inject = requested_page if requested_page else request.current_page
+                    
                     page_context_injected = False
-                    if requested_page:
+                    if page_to_inject:
                         # Load page mapping
                         page_mapping = None
                         for art in pdf_artifacts:
@@ -257,16 +259,16 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                         # Extract and Inject
                         for art in pdf_artifacts:
                             if art.filename == "pdf_content.txt":
-                                page_content = extract_page_content(art.content, requested_page, page_mapping)
+                                page_content = extract_page_content(art.content, page_to_inject, page_mapping)
                                 if page_content:
                                     knowledge_context += f"\n{'!'*40}\n"
-                                    knowledge_context += f"⚠️ CONTEXTO PRIORITARIO: PÁGINA {requested_page} ⚠️\n"
+                                    knowledge_context += f"⚠️ CONTEXTO PRIORITARIO: PÁGINA {page_to_inject} (VISUALIZACIÓN ACTUAL) ⚠️\n"
                                     knowledge_context += f"{'!'*40}\n"
                                     knowledge_context += page_content
                                     knowledge_context += f"\n{'!'*40}\n"
                                     knowledge_context += f"FIN DE CONTEXTO PRIORITARIO\n\n"
                                     page_context_injected = True
-                                    print(f"🚀 [Nav Intent] Injected Page {requested_page} Content")
+                                    print(f"🚀 [Nav Intent] Injected Page {page_to_inject} Content")
 
                     # 2. ADDITIONAL RETRIEVAL (Semantic vs Injection)
                     # Even if we found the page, we might want semantic search for concepts on that page
@@ -316,13 +318,12 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         final_query = f"{request.query_text}\n\n{conversation_history}CONTEXT DISPONIBLE:\n{knowledge_context}"
         
         # 3. [NAVIGATION ENFORCEMENT] SYSTEM INSTRUCTION override
+        # Only strict enforcement if user EXPLICITLY asked for a page
         if requested_page:
-             final_query += f"\n\n🚨 INSTRUCCIÓN DE NAVEGACIÓN ACTIVA: 🚨\n"
-             final_query += f"El usuario está preguntando ESTRICTAMENTE sobre la PÁGINA {requested_page}.\n"
-             final_query += f"IGNORA cualquier conversación anterior sobre otras páginas.\n"
-             final_query += f"Usa EXCLUSIVAMENTE la información marcada bajo 'CONTEXTO PRIORITARIO: PÁGINA {requested_page}'.\n"
-             final_query += f"Si la información no está en esa sección, busca en los fragmentos relevantes, pero prioriza la página {requested_page}.\n"
-        
+            final_query += f"\n\n🚨 INSTRUCCIÓN TEMPORAL: El usuario pregunta explícitamente por la PÁGINA {requested_page}. Prioriza su contenido.\n"
+        elif request.current_page:
+            final_query += f"\n\n🚨 CONTEXTO ACTUAL: El usuario está viendo la PÁGINA {request.current_page}. Si su pregunta es 'de qué trata esta página' o similar, usa el contenido de la PÁGINA {request.current_page}.\n"
+
         # [IMPROVED] CONTEXT-AWARE SYSTEM PROMPT
         # Adapts based on what content is available in this session
         has_pdfs = 'pdf_artifacts' in locals() and bool(pdf_artifacts)
@@ -330,7 +331,7 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
         has_content = has_pdfs or has_repos
         
         final_query += "\n\nINSTRUCCIONES:\n"
-        final_query += "IDIOMA: Responde SIEMPRE en ESPAÑOL.\n\n"
+        final_query += "IDIOMA: Responde SIEMPRE en ESPAÑOL (México). Si el usuario habla en otro idioma, responde en ESPAÑOL.\n\n"
         
         # [NEW] Conversation flow awareness
         has_history = bool(history_messages) if 'history_messages' in locals() else False
@@ -360,24 +361,22 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 # NO CONTENT - Friendly welcome prompt
                 final_query += "Eres Genesis, un asistente amigable y experto.\n"
                 final_query += "Actualmente NO hay contenido disponible en esta conversación.\n"
-                final_query += "Para poder ayudarte mejor, el usuario puede:\n"
-                final_query += "1. Ingestar un PDF usando el botón 'Ingest Repo' → 'PDF URL'\n"
-                final_query += "Eres Genesis, un arquitecto de software experto.\n"
-                final_query += "Tienes acceso al código del repositorio que se te proporciona arriba.\n\n"
-                final_query += "CAPACIDADES:\n"
-                final_query += "- Analizar y explicar código\n"
-                final_query += "- Sugerir mejoras y refactorizaciones\n"
-                final_query += "- Crear nuevos archivos de código\n\n"
-                final_query += "PARA CREAR/EDITAR ARCHIVOS, USA ESTE FORMATO:\n"
-                final_query += "*** WRITE_FILE: <ruta_relativa> ***\n"
-                final_query += "<contenido>\n"
-                final_query += "*** END_WRITE ***\n\n"
+                final_query += "Para ayudarte mejor, puedes ingestar un PDF o un repositorio.\n"
             
             else:
-                # BOTH PDF AND REPO - Full capabilities
-                final_query += "Eres Genesis, un asistente experto con acceso a documentos y código.\n"
-                final_query += "Puedes analizar PDFs y trabajar con repositorios de código.\n\n"
-                final_query += "PARA ARCHIVOS:\n"
+                final_query += "Eres Genesis, un arquitecto de software y analista experto.\n"
+                if has_repos:
+                    final_query += "Tienes acceso a código. Puedes analizarlo, explicarlo y sugerir cambios.\n"
+                if has_pdfs:
+                    final_query += "Tienes acceso a documentos PDF. Puedes leerlos y responder preguntas sobre ellos.\n"
+                
+                final_query += "\nREGLAS DE COMPORTAMIENTO (MODO ARQUITECTO):\n"
+                final_query += "1. SI LA PREGUNTA ES SOBRE EL TEXTO/PDF: ¡RESPONDE LA PREGUNTA! No intentes crear archivos .txt con el contenido.\n"
+                final_query += "2. SI LA PREGUNTA ES DE CÓDIGO: Puedes usar WRITE_FILE para crear/editar código si es necesario.\n"
+                final_query += "3. NO ALUCINES EDICIONES: No generes bloques WRITE_FILE a menos que el usuario te pida explícitamente crear un archivo o refactorizar código.\n"
+                final_query += "4. SI EL USUARIO PREGUNTA 'De qué trata esta página': Responde con un resumen o explicación, NO creando un archivo.\n\n"
+
+                final_query += "PARA CREAR/EDITAR ARCHIVOS (SÓLO SI ES NECESARIO):\n"
                 final_query += "*** WRITE_FILE: <ruta> ***\n<contenido>\n*** END_WRITE ***\n"
 
         if request.mode == "swarm":
