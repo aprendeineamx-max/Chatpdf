@@ -1,7 +1,9 @@
 Traceback (most recent call last):
-  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 151, in query_document
-    requested_page = extract_page_query(request.query_text)
-                     ^^^^^^^^^^^^^^^^^^
-NameError: name 'extract_page_query' is not defined
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\app\main.py", line 404, in query_document
+    if request.provider == "snowflake":
+       ^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\Desktop\Universal Pdf\pdf-cortex\venv\Lib\site-packages\pydantic\main.py", line 1026, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'QueryRequest' object has no attribute 'provider'
 
-Error: name 'extract_page_query' is not defined
+Error: 'QueryRequest' object has no attribute 'provider'

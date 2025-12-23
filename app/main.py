@@ -398,15 +398,52 @@ async def query_document(request: QueryRequest, background_tasks: BackgroundTask
                 final_query += "2. SI LA PREGUNTA ES DE CÓDIGO: Puedes usar WRITE_FILE para crear/editar código si es necesario.\n"
                 final_query += "3. NO ALUCINES EDICIONES: No generes bloques WRITE_FILE a menos que el usuario te pida explícitamente crear un archivo o refactorizar código.\n"
                 final_query += "4. SI EL USUARIO PREGUNTA 'De qué trata esta página': Responde con un resumen o explicación, NO creando un archivo.\n\n"
-        action_log = agent_executor.execute_actions(response, target_repo)
+
+        # 4. Execute Query - PROVIDER ROUTING
+        # [NEW] Snowflake Cortex Provider (Completely Separate from Organic System)
+        if request.provider == "snowflake":
+            try:
+                from app.services.llm.snowflake_service import snowflake_client
+                from app.core.config import settings
+                
+                if snowflake_client.enabled:
+                    print(f"❄️ Executing via Snowflake Cortex (Account: {settings.SNOWFLAKE_ACCOUNT})")
+                    
+                    # Use model specified in request or default to llama3-70b
+                    cortex_model = request.model if request.model else "llama3-70b"
+                    cortex_response = snowflake_client.complete(final_query, model=cortex_model)
+                    
+                    # Format response to match organic system format
+                    response = {
+                        "answer": cortex_response,
+                        "sources": [],
+                        "session_id": session_id,
+                        "rag_mode_used": rag_mode_used,
+                        "metadata": {
+                            "provider": "snowflake",
+                            "model": cortex_model
+                        }
+                    }
+                else:
+                    print("⚠️ Snowflake requested but not enabled, falling back to organic system")
+                    response = rag_service.query(final_query, use_history=True)
+            except Exception as snowflake_error:
+                print(f"❌ Snowflake Cortex Error: {snowflake_error}, falling back to organic system")
+                response = rag_service.query(final_query, use_history=True)
+        else:
+            # Execute via Organic System (Gemini/Groq/SambaNova/etc)
+            response = rag_service.query(final_query, use_history=True)
+
+        # 5. Execute Actions (File Writing)
+        from app.services.agent.executor import agent_executor
+        action_log = agent_executor.execute_actions(response if isinstance(response, str) else response.get("answer", ""), target_repo)
         
         # Append action log to response so frontend knows
-        if action_log and isinstance(response, dict):
-            # If response is dict, we can't easily append string to it, so we append to answer
-            if "answer" in response:
+        if action_log:
+            if isinstance(response, dict) and "answer" in response:
                 response["answer"] += action_log
-        elif action_log and isinstance(response, str):
-            response += action_log
+            elif isinstance(response, str):
+                response += action_log
 
         # 3. Save History (Async)
             
