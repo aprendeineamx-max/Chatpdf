@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     SNOWFLAKE_WAREHOUSE: Optional[str] = "COMPUTE_WH"
     SNOWFLAKE_DATABASE: Optional[str] = None
     SNOWFLAKE_SCHEMA: Optional[str] = "PUBLIC"
+    SNOWFLAKE_TOKEN: Optional[str] = None # JWT Token (Alternative to Password)
 
     # Database Configuration Strategy
     SUPABASE_TARGET: str = "VPS" # Options: "VPS", "CLOUD"

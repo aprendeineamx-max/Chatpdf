@@ -16,15 +16,24 @@ class SnowflakeCortexClient:
         if not self.enabled:
             return None
         try:
-            self.conn = snowflake.connector.connect(
-                user=settings.SNOWFLAKE_USER,
-                password=settings.SNOWFLAKE_PASSWORD,
-                account=settings.SNOWFLAKE_ACCOUNT,
-                warehouse=settings.SNOWFLAKE_WAREHOUSE,
-                database=settings.SNOWFLAKE_DATABASE,
-                schema=settings.SNOWFLAKE_SCHEMA,
-                role=settings.SNOWFLAKE_ROLE
-            )
+            conn_params = {
+                "user": settings.SNOWFLAKE_USER,
+                "account": settings.SNOWFLAKE_ACCOUNT,
+                "warehouse": settings.SNOWFLAKE_WAREHOUSE,
+                "database": settings.SNOWFLAKE_DATABASE,
+                "schema": settings.SNOWFLAKE_SCHEMA,
+                "role": settings.SNOWFLAKE_ROLE
+            }
+
+            # Prioritize Token (SAML/OAuth/JWT) if present
+            if settings.SNOWFLAKE_TOKEN:
+                print("❄️ Connecting to Snowflake using OAuth Token...")
+                conn_params["authenticator"] = "oauth"
+                conn_params["token"] = settings.SNOWFLAKE_TOKEN
+            else:
+                conn_params["password"] = settings.SNOWFLAKE_PASSWORD
+
+            self.conn = snowflake.connector.connect(**conn_params)
             return self.conn
         except Exception as e:
             print(f"❌ Snowflake Connection Failed: {e}")
