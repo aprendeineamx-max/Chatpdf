@@ -183,6 +183,9 @@ def extract_smart_context(full_text: str, current_page: int, page_mapping: dict 
 
 @app.post(f"{settings.API_V1_STR}/query")
 async def query_document(request: QueryRequest, background_tasks: BackgroundTasks):
+    # [DEBUG] Log inbound provider
+    print(f"🔍 INBOUND REQUEST - Provider: {request.provider}, Model: {request.model}")
+    
     try:
         from app.services.rag.engine import rag_service
         from app.services.chat.history import chat_history
